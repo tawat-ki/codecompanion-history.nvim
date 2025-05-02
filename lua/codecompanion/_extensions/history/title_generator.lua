@@ -1,8 +1,8 @@
 local client = require("codecompanion.http")
 local config = require("codecompanion.config")
 local CONSTANTS = {
-	STATUS_ERROR = "error",
-	STATUS_SUCCESS = "success",
+    STATUS_ERROR = "error",
+    STATUS_SUCCESS = "success",
 }
 
 ---@class TitleGenerator
@@ -12,44 +12,44 @@ local TitleGenerator = {}
 ---@param opts HistoryOpts
 ---@return TitleGenerator
 function TitleGenerator.new(opts)
-	local self = setmetatable({}, {
-		__index = TitleGenerator,
-	})
-	self.opts = opts
-	return self --[[@as TitleGenerator]]
+    local self = setmetatable({}, {
+        __index = TitleGenerator,
+    })
+    self.opts = opts
+    return self --[[@as TitleGenerator]]
 end
 
 ---Generate title for chat
 ---@param chat Chat The chat object containing messages and ID
 ---@param callback fun(title: string|nil) Callback function to receive the generated title
 function TitleGenerator:generate(chat, callback)
-	-- Early returns for existing title or disabled auto-generation
-	if chat.opts.title then
-		return callback(chat.opts.title)
-	end
-	callback("Deciding title...")
-	-- Return early if no messages
-	if #chat.messages == 0 then
-		return callback(nil)
-	end
-	-- Get first user and llm messages
-	local first_user_msg, first_llm_msg
-	for _, msg in ipairs(chat.messages) do
-		if not first_user_msg and msg.role == config.constants.USER_ROLE then
-			first_user_msg = msg
-		elseif not first_llm_msg and msg.role == config.constants.LLM_ROLE then
-			first_llm_msg = msg
-		end
-		if first_user_msg and first_llm_msg then
-			break
-		end
-	end
-	if not first_user_msg then
-		return callback(nil)
-	end
-	-- Create prompt for title generation
-	local prompt = string.format(
-		[[Generate a very short and concise title (max 5 words) for this chat based on the following conversation:
+    -- Early returns for existing title or disabled auto-generation
+    if chat.opts.title then
+        return callback(chat.opts.title)
+    end
+    callback("Deciding title...")
+    -- Return early if no messages
+    if #chat.messages == 0 then
+        return callback(nil)
+    end
+    -- Get first user and llm messages
+    local first_user_msg, first_llm_msg
+    for _, msg in ipairs(chat.messages) do
+        if not first_user_msg and msg.role == config.constants.USER_ROLE then
+            first_user_msg = msg
+        elseif not first_llm_msg and msg.role == config.constants.LLM_ROLE then
+            first_llm_msg = msg
+        end
+        if first_user_msg and first_llm_msg then
+            break
+        end
+    end
+    if not first_user_msg then
+        return callback(nil)
+    end
+    -- Create prompt for title generation
+    local prompt = string.format(
+        [[Generate a very short and concise title (max 5 words) for this chat based on the following conversation:
 Do not include any special characters or quotes. The title should be in English.
 
 Examples: 
@@ -69,42 +69,42 @@ Assistant: %s
 ---
 
 Title:]],
-		first_user_msg.content:sub(1, 500),
-		first_llm_msg and first_llm_msg.content:sub(1, 500) or ""
-	)
-	self:_make_adapter_request(chat, prompt, callback)
+        first_user_msg.content:sub(1, 500),
+        first_llm_msg and first_llm_msg.content:sub(1, 500) or ""
+    )
+    self:_make_adapter_request(chat, prompt, callback)
 end
 
 ---@param chat Chat
 ---@param prompt string
 ---@param callback fun(title: string|nil)
 function TitleGenerator:_make_adapter_request(chat, prompt, callback)
-	local settings = chat.adapter:map_schema_to_params(chat.settings)
-	settings.opts.stream = false
-	local payload = {
-		messages = chat.adapter:map_roles({
-			{ role = "user", content = prompt },
-		}),
-	}
-	client.new({ adapter = settings }):request(payload, {
-		callback = function(err, data, adapter)
-			if err and err.stderr ~= "{}" then
-				vim.notify("Error while generating title: " .. err.stderr)
-				return callback(nil)
-			end
-			if data then
-				local result = chat.adapter.handlers.chat_output(adapter, data)
-				if result and result.status then
-					if result.status == CONSTANTS.STATUS_SUCCESS then
-						return callback(vim.trim(result.output.content))
-					elseif result.status == CONSTANTS.STATUS_ERROR then
-						vim.notify("Error while generating title: " .. result.output)
-						return callback(nil)
-					end
-				end
-			end
-		end,
-	})
+    local settings = chat.adapter:map_schema_to_params(chat.settings)
+    settings.opts.stream = false
+    local payload = {
+        messages = chat.adapter:map_roles({
+            { role = "user", content = prompt },
+        }),
+    }
+    client.new({ adapter = settings }):request(payload, {
+        callback = function(err, data, adapter)
+            if err and err.stderr ~= "{}" then
+                vim.notify("Error while generating title: " .. err.stderr)
+                return callback(nil)
+            end
+            if data then
+                local result = chat.adapter.handlers.chat_output(adapter, data)
+                if result and result.status then
+                    if result.status == CONSTANTS.STATUS_SUCCESS then
+                        return callback(vim.trim(result.output.content))
+                    elseif result.status == CONSTANTS.STATUS_ERROR then
+                        vim.notify("Error while generating title: " .. result.output)
+                        return callback(nil)
+                    end
+                end
+            end
+        end,
+    })
 end
 
 -- ---Make request to Groq API
