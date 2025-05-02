@@ -1,29 +1,40 @@
-local history_instance
+---@class History
+---@field opts HistoryOpts
+---@field storage Storage
+---@field title_generator TitleGenerator
+---@field ui UI
+---@field new fun(opts: HistoryOpts): History
 
 local History = {}
-History.config = {
+
+---@class HistoryOpts
+local default_opts = {
 	file_path = vim.fn.stdpath("data") .. "/codecompanion_chats.json",
 	auto_generate_title = true,
 	default_buf_title = "[CodeCompanion]",
 	keymap = "gh",
+	---@type Pickers
 	picker = "telescope",
 }
 
+---@type History|nil
+local history_instance
+
+---@param opts HistoryOpts
+---@return History
 function History.new(opts)
-	local self = setmetatable({}, {
+	local history = setmetatable({}, {
 		__index = History,
 	})
-	self.opts = opts
-	self.storage = require("codecompanion._extensions.history.storage").new(self, opts)
-	self.title_generator = require("codecompanion._extensions.history.title_generator").new(opts)
-	self.ui = require("codecompanion._extensions.history.ui").new(opts, self.storage, self.title_generator)
-
+	history.opts = opts
+	history.storage = require("codecompanion._extensions.history.storage").new(opts)
+	history.title_generator = require("codecompanion._extensions.history.title_generator").new(opts)
+	history.ui = require("codecompanion._extensions.history.ui").new(opts, history.storage, history.title_generator)
 	-- Setup commands
-	self:_create_commands()
-	self:_setup_autocommands()
-	self:_setup_keymaps()
-
-	return self
+	history:_create_commands()
+	history:_setup_autocommands()
+	history:_setup_keymaps()
+	return history --[[@as History]]
 end
 
 function History:_create_commands()
@@ -85,6 +96,9 @@ function History:_setup_autocommands()
 	})
 end
 
+---@param chat Chat
+---@param title? string
+---@return string
 function History:_get_title(chat, title)
 	return title and title or (self.opts.default_buf_title .. " " .. chat.id)
 end
@@ -101,6 +115,7 @@ function History:_setup_keymaps()
 	}
 end
 
+---@param chat Chat
 function History:_subscribe_to_chat(chat)
 	-- Add subscription to save chat on every response from llm
 	chat.subscribers:subscribe({
@@ -119,7 +134,7 @@ function History:_subscribe_to_chat(chat)
 						--save the title to history
 						self.storage:save_chat(chat_instance)
 					else
-						self.ui:_set_buf_title(chat_instance.bufnr, self._get_title(chat_instance))
+						self.ui:_set_buf_title(chat_instance.bufnr, self:_get_title(chat_instance))
 					end
 				end)
 			end
@@ -128,17 +143,18 @@ function History:_subscribe_to_chat(chat)
 	})
 end
 
+---@type CodeCompanion.Extension
 return {
+	---@param opts HistoryOpts
 	setup = function(opts)
-		if history_instance then
-			return
+		if not history_instance then
+			history_instance = History.new(vim.tbl_deep_extend("force", default_opts, opts or {}))
 		end
-		History.config = vim.tbl_deep_extend("force", History.config, opts or {})
-		history_instance = History.new(History.config)
 	end,
 	exports = {
+		---@return string filepath
 		get_saved_location = function()
-			return History.config.file_path
+			return History.opts.file_path
 		end,
 	},
 }

@@ -2,12 +2,12 @@ local utils = require("codecompanion._extensions.history.utils")
 local DefaultPicker = require("codecompanion._extensions.history.pickers.default")
 
 ---@class TelescopePicker : DefaultPicker
----@field super DefaultPicker
 local TelescopePicker = setmetatable({}, {
 	__index = DefaultPicker,
 })
 TelescopePicker.__index = TelescopePicker
 
+---@param current_save_id? string
 function TelescopePicker:browse(current_save_id)
 	require("telescope.pickers")
 		.new({}, {

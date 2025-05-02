@@ -1,15 +1,20 @@
+---@class Storage
+---@field path any Path object from plenary.path
 local Storage = {}
-function Storage.new(history, opts)
+
+---@param opts HistoryOpts
+---@return Storage
+function Storage.new(opts)
 	local self = setmetatable({}, {
 		__index = Storage,
 	})
-	self.history = history
 	self.path = require("plenary.path"):new(opts.file_path)
 	-- Ensure storage directory exists
 	self:_ensure_storage_dir()
 	return self
 end
 
+---Ensure the storage directory exists
 function Storage:_ensure_storage_dir()
 	local dir = self.path:parent()
 	if not dir:exists() then
@@ -17,6 +22,8 @@ function Storage:_ensure_storage_dir()
 	end
 end
 
+---Load all chats from storage
+---@return table<string, ChatData>
 function Storage:load_chats()
 	if not self.path:exists() then
 		return {}
@@ -40,6 +47,8 @@ function Storage:load_chats()
 	return decoded
 end
 
+---Save a chat to storage
+---@param chat Chat
 function Storage:save_chat(chat)
 	local chats = self:load_chats()
 	local save_id = chat.opts.save_id
@@ -70,6 +79,8 @@ function Storage:save_chat(chat)
 	-- self.history.ui:update_last_saved(chat, os.time())
 end
 
+---Delete a chat from storage
+---@param id string
 function Storage:delete_chat(id)
 	if not id then
 		return vim.notify("Can't delete chat with no id")

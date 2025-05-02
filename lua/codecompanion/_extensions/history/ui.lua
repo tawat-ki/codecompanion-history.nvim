@@ -1,7 +1,17 @@
 local config = require("codecompanion.config")
 local utils = require("codecompanion._extensions.history.utils")
+
+---@class UI
+---@field storage Storage
+---@field title_generator TitleGenerator
+---@field default_buf_title string
+---@field picker "telescope"|"default"
 local UI = {}
--- Constructor for UI class
+
+---@param opts HistoryOpts
+---@param storage Storage
+---@param title_generator TitleGenerator
+---@return UI
 function UI.new(opts, storage, title_generator)
 	local self = setmetatable({}, {
 		__index = UI,
@@ -12,14 +22,20 @@ function UI.new(opts, storage, title_generator)
 	self.default_buf_title = opts.default_buf_title
 	self.picker = opts.picker
 
-	return self
+	return self --[[@as UI]]
 end
 
 -- Private method for setting buffer title with retry
+---@param bufnr number
+---@param title string|string[]
+---@param attempt? number
 function UI:_set_buf_title(bufnr, title, attempt)
 	attempt = attempt or 0
 
 	vim.schedule(function()
+		---Takes a array of strings and justifies them to fit the available width
+		---@param str_array string[]
+		---@return string
 		local function justify_strings(str_array)
 			-- Validate input
 			if #str_array == 0 then
@@ -103,7 +119,9 @@ function UI:_set_buf_title(bufnr, title, attempt)
 	end)
 end
 
--- Format chat data for display
+---Format chat data for display
+---@param chats table<string, ChatData>
+---@return ChatData[]
 local function format_chat_items(chats)
 	local items = {}
 	for _, chat_item in pairs(chats) do
@@ -126,6 +144,7 @@ local function format_chat_items(chats)
 	return items
 end
 
+---@return nil
 function UI:open_saved_chats()
 	local chats = self.storage:load_chats()
 	if vim.tbl_isempty(chats) then
@@ -149,13 +168,17 @@ function UI:open_saved_chats()
 	local last_chat = codecompanion.last_chat()
 	resolved_picker
 		:new(items, {
+			---@param chat_data ChatData
+			---@return string[] lines
 			on_preview = function(chat_data)
 				return self:_get_preview_lines(chat_data)
 			end,
+			---@param chat_data ChatData
 			on_delete = function(chat_data)
 				self.storage:delete_chat(chat_data.save_id)
 				self:open_saved_chats()
 			end,
+			---@param chat_data ChatData
 			on_select = function(chat_data)
 				local chat_module = require("codecompanion.strategies.chat")
 				local opened_chats = chat_module.buf_get_chat()
@@ -179,6 +202,9 @@ function UI:open_saved_chats()
 		:browse(last_chat and last_chat.opts.save_id)
 end
 
+---Creates a new chat from the given chat data restoring what it can
+---@param chat_data? ChatData
+---@return Chat
 function UI:create_chat(chat_data)
 	chat_data = chat_data or {}
 	local messages = chat_data.messages or {}
@@ -213,7 +239,8 @@ function UI:create_chat(chat_data)
 	return chat
 end
 
--- Private method for rendering messages in a buffer
+---Retrieve the lines to be displayed in the preview window
+---@param chat_data ChatData
 function UI:_get_preview_lines(chat_data)
 	local messages = chat_data.messages
 	local lines = {}
@@ -260,9 +287,12 @@ function UI:_get_preview_lines(chat_data)
 	return lines
 end
 
+---@param chat Chat
+---@param saved_at number
 function UI:update_last_saved(chat, saved_at)
 	--saved at icon
 	local icon = " "
 	self:_set_buf_title(chat.bufnr, { chat.opts.title or self.default_buf_title, icon .. utils.format_time(saved_at) })
 end
+
 return UI

@@ -1,11 +1,20 @@
 local M = {}
 
+--- Format a Unix timestamp into a time string (HH:MM:SS).
+---@param timestamp number Unix timestamp
+---@return string Formatted time string in HH:MM:SS format
 function M.format_time(timestamp)
+	if type(timestamp) ~= "number" then
+		error("Invalid timestamp: expected a number")
+	end
+
 	local formatted_time = os.date("%H:%M:%S", timestamp)
-	return formatted_time
+	return tostring(formatted_time) -- Ensure the return type is explicitly a string
 end
 
 -- Format timestamp to human readable relative time
+---@param timestamp number Unix timestamp
+---@return string Relative time string (e.g. "5m ago", "2h ago")
 function M.format_relative_time(timestamp)
 	local now = os.time()
 	local diff = now - timestamp
@@ -20,7 +29,9 @@ function M.format_relative_time(timestamp)
 		return math.floor(diff / 86400) .. "d ago"
 	end
 end
+
 --This function is pasted from ravitemer/mcphub.nvim plugin
+---@return EditorInfo Information about current editor state
 function M.get_editor_info()
 	local buffers = vim.fn.getbufinfo({ buflisted = 1 })
 	local valid_buffers = {}
@@ -31,6 +42,7 @@ function M.get_editor_info()
 		-- Only include valid files (non-empty name and empty buftype)
 		local buftype = vim.api.nvim_buf_get_option(buf.bufnr, "buftype")
 		if buf.name ~= "" and buftype == "" then
+			---@class BufferInfo
 			local buffer_info = {
 				bufnr = buf.bufnr,
 				name = buf.name,

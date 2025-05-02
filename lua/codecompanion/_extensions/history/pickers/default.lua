@@ -1,10 +1,16 @@
 local utils = require("codecompanion._extensions.history.utils")
+
+---@alias Pickers "telescope" | "default"
+
+---@class DefaultPicker
+---@field chats ChatData[]
+---@field handlers UIHandlers
 local DefaultPicker = {}
 DefaultPicker.__index = DefaultPicker
 
----@class  DefaultPicker
----@field chats Array
----@field handlers {on_select: function, on_delete: function, on_preview: function}
+---@param chats ChatData[]
+---@param handlers UIHandlers
+---@return DefaultPicker
 function DefaultPicker:new(chats, handlers)
 	local base = setmetatable({}, self)
 	self.chats = chats
@@ -13,6 +19,7 @@ function DefaultPicker:new(chats, handlers)
 	return base
 end
 
+---@param current_save_id? string
 function DefaultPicker:browse(current_save_id)
 	vim.ui.select(self.chats, {
 		prompt = "Saved Chats",

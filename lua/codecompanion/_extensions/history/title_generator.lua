@@ -4,19 +4,24 @@ local CONSTANTS = {
 	STATUS_ERROR = "error",
 	STATUS_SUCCESS = "success",
 }
+
+---@class TitleGenerator
+---@field opts HistoryOpts
 local TitleGenerator = {}
 
+---@param opts HistoryOpts
+---@return TitleGenerator
 function TitleGenerator.new(opts)
 	local self = setmetatable({}, {
 		__index = TitleGenerator,
 	})
 	self.opts = opts
-	return self
+	return self --[[@as TitleGenerator]]
 end
 
 ---Generate title for chat
----@param chat table The chat object containing messages and ID
----@param callback function Callback function to receive the generated title
+---@param chat Chat The chat object containing messages and ID
+---@param callback fun(title: string|nil) Callback function to receive the generated title
 function TitleGenerator:generate(chat, callback)
 	-- Early returns for existing title or disabled auto-generation
 	if chat.opts.title then
@@ -70,6 +75,9 @@ Title:]],
 	self:_make_adapter_request(chat, prompt, callback)
 end
 
+---@param chat Chat
+---@param prompt string
+---@param callback fun(title: string|nil)
 function TitleGenerator:_make_adapter_request(chat, prompt, callback)
 	local settings = chat.adapter:map_schema_to_params(chat.settings)
 	settings.opts.stream = false
@@ -78,7 +86,7 @@ function TitleGenerator:_make_adapter_request(chat, prompt, callback)
 			{ role = "user", content = prompt },
 		}),
 	}
-	self.current_request = client.new({ adapter = settings }):request(payload, {
+	client.new({ adapter = settings }):request(payload, {
 		callback = function(err, data, adapter)
 			if err and err.stderr ~= "{}" then
 				vim.notify("Error while generating title: " .. err.stderr)
