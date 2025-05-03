@@ -10,7 +10,7 @@ local History = {}
 ---@class HistoryOpts
 local default_opts = {
     auto_generate_title = true,
-    default_buf_title = "[CodeCompanion]",
+    default_buf_title = "[CodeCompanion] " .. " ",
     keymap = "gh",
     ---@type Pickers
     picker = "telescope",

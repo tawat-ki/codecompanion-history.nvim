@@ -91,8 +91,6 @@ require("codecompanion").setup({
             opts = {
                 -- Automatically generate titles for new chats
                 auto_generate_title = true,
-                -- Default buffer title when no title is set
-                default_buf_title = "[CodeCompanion]",
                 -- Keymap to open history from chat buffer (default: gh)
                 keymap = "gh",
                 -- Picker interface ("telescope" or "default")
