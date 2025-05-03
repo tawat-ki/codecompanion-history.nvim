@@ -10,6 +10,7 @@ local History = {}
 ---@class HistoryOpts
 local default_opts = {
     auto_generate_title = true,
+    delete_on_clearing_chat = false,
     default_buf_title = "[CodeCompanion] " .. " ",
     keymap = "gh",
     ---@type Pickers
@@ -85,8 +86,10 @@ function History:_setup_autocommands()
             local chat_module = require("codecompanion.strategies.chat")
             local bufnr = opts.data.bufnr
             local chat = chat_module.buf_get_chat(bufnr)
+            if self.opts.delete_on_clearing_chat then
+                self.storage:delete_chat(chat.opts.save_id)
+            end
             self.ui:_set_buf_title(chat.bufnr, self:_get_title(chat))
-            self.storage:delete_chat(chat.opts.save_id)
             --set title to nil so that we can generate it again
             chat.opts.title = nil
             --generate a new save_id to be used to save the chat

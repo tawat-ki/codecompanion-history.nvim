@@ -93,6 +93,8 @@ require("codecompanion").setup({
                 auto_generate_title = true,
                 -- Keymap to open history from chat buffer (default: gh)
                 keymap = "gh",
+                -- Remove chat from storage when chat is cleared with `gx`
+                delete_on_clearing_chat = false,
                 -- Picker interface ("telescope" or "default")
                 picker = "telescope", 
             }
