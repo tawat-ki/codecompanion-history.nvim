@@ -50,7 +50,7 @@ function TitleGenerator:generate(chat, callback)
     -- Create prompt for title generation
     local prompt = string.format(
         [[Generate a very short and concise title (max 5 words) for this chat based on the following conversation:
-Do not include any special characters or quotes. The title should be in English.
+Do not include any special characters or quotes. Your response shouldn't contain any other text, just the title.
 
 Examples: 
 
@@ -58,8 +58,8 @@ Examples:
    Assistant: The capital of France is Paris.
    Title: Capital of France
 2. User: How do I create a new file in Vim?
-    Assistant: You can create a new file in Vim by using the command :e filename.
-    Title: Vim Commands
+   Assistant: You can create a new file in Vim by using the command :e filename.
+   Title: Vim Commands
 
 ---
 User: %s
