@@ -4,9 +4,16 @@
 ---@field setup fun(opts: table): any Function called when extension is loaded
 ---@field exports? table Optional table of functions exposed via codecompanion.extensions.name
 
+---@class HistoryOpts
+---@field default_buf_title? string A name for the chat buffer that tells that this is an auto saving chat
+---@field auto_generate_title? boolean Generate title for the chat
+---@field continue_last_chat? boolean On exiting and entering neovim, loads the last chat on opening chat
+---@field delete_on_clearing_chat? boolean When chat is cleared with `gx` delete the chat from history
+---@field keymap? string Keymap to open saved chats from the chat buffer
+---@field picker? Pickers Picker to use (telescope, etc.)
+
 ---@class Chat
 ---@field opts {title:string, save_id: string}
----@diagnostic disable-next-line: duplicate-doc-field
 ---@field messages ChatMessage[]
 ---@field id number
 ---@field bufnr number

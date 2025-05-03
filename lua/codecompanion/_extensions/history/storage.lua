@@ -264,4 +264,30 @@ function Storage:delete_chat(id)
     end
 end
 
+---Get the most recently updated chat from storage
+---@return ChatData|nil
+function Storage:get_last_chat()
+    local index = self:load_chats()
+    if vim.tbl_isempty(index) then
+        return nil
+    end
+
+    -- Find the most recently updated chat
+    local most_recent = nil
+    local most_recent_time = 0
+
+    for id, chat_meta in pairs(index) do
+        if chat_meta.updated_at and chat_meta.updated_at > most_recent_time then
+            most_recent = id
+            most_recent_time = chat_meta.updated_at
+        end
+    end
+
+    -- If we found a recent chat, load and return it
+    if most_recent then
+        return self:load_chat(most_recent)
+    end
+
+    return nil
+end
 return Storage

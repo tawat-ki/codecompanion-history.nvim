@@ -3,15 +3,21 @@
 ---@field storage Storage
 ---@field title_generator TitleGenerator
 ---@field ui UI
+---@field should_load_last_chat boolean
 ---@field new fun(opts: HistoryOpts): History
 
 local History = {}
 
----@class HistoryOpts
+---@type HistoryOpts
 local default_opts = {
-    auto_generate_title = true,
-    delete_on_clearing_chat = false,
+    ---A name for the chat buffer that tells that this is a auto saving chat
     default_buf_title = "[CodeCompanion] " .. " ",
+    ---Generate title for the chat
+    auto_generate_title = true,
+    ---On exiting and entering neovim, loads the last chat on opening chat
+    continue_last_chat = true,
+    ---When chat is cleared with `gx` delete the chat from history
+    delete_on_clearing_chat = false,
     keymap = "gh",
     ---@type Pickers
     picker = "telescope",
@@ -30,6 +36,7 @@ function History.new(opts)
     history.storage = require("codecompanion._extensions.history.storage").new()
     history.title_generator = require("codecompanion._extensions.history.title_generator").new(opts)
     history.ui = require("codecompanion._extensions.history.ui").new(opts, history.storage, history.title_generator)
+    history.should_load_last_chat = opts.continue_last_chat
     -- Setup commands
     history:_create_commands()
     history:_setup_autocommands()
@@ -60,6 +67,15 @@ function History:_setup_autocommands()
             local chat_module = require("codecompanion.strategies.chat")
             local bufnr = opts.data.bufnr
             local chat = chat_module.buf_get_chat(bufnr)
+            if self.should_load_last_chat then
+                self.should_load_last_chat = false
+                local last_saved_chat = self.storage:get_last_chat()
+                if last_saved_chat then
+                    chat:close()
+                    self.ui:create_chat(last_saved_chat)
+                    return
+                end
+            end
             -- Set initial buffer title if present that we passed while creating a chat from history
             if chat.opts.title then
                 self.ui:_set_buf_title(chat.bufnr, chat.opts.title)
