@@ -1,4 +1,5 @@
 local config = require("codecompanion.config")
+local log = require("codecompanion._extensions.history.log")
 local utils = require("codecompanion._extensions.history.utils")
 
 ---@class UI
@@ -22,6 +23,7 @@ function UI.new(opts, storage, title_generator)
     self.default_buf_title = opts.default_buf_title
     self.picker = opts.picker
 
+    log:debug("Initialized UI with picker: %s", opts.picker)
     return self --[[@as UI]]
 end
 
@@ -31,6 +33,7 @@ end
 ---@param attempt? number
 function UI:_set_buf_title(bufnr, title, attempt)
     attempt = attempt or 0
+    log:trace("Setting buffer title (attempt %d) for buffer %d", attempt, bufnr)
 
     vim.schedule(function()
         ---Takes a array of strings and justifies them to fit the available width
@@ -48,6 +51,7 @@ function UI:_set_buf_title(bufnr, title, attempt)
             -- Get the window ID for this buffer
             local win_id = vim.fn.bufwinid(bufnr)
             if win_id == -1 then
+                log:debug("No window found for buffer %d, falling back to simple concat", bufnr)
                 return table.concat(str_array, " ")
             end
 
@@ -58,6 +62,7 @@ function UI:_set_buf_title(bufnr, title, attempt)
             local total_len = 0
             for _, str in ipairs(str_array) do
                 if type(str) ~= "string" then
+                    log:warn("Non-string value in title array, falling back to simple concat")
                     return table.concat(str_array, " ")
                 end
                 total_len = total_len + vim.api.nvim_strwidth(str)
@@ -101,7 +106,6 @@ function UI:_set_buf_title(bufnr, title, attempt)
             final_title = tostring(title)
         end
 
-        -- local icon = " "
         local icon = "✨ "
         -- throws error if buffer with same name already exists so we add a counter to the title
         local success, err = pcall(function()
@@ -111,10 +115,14 @@ function UI:_set_buf_title(bufnr, title, attempt)
 
         if not success then
             if attempt > 10 then
+                log:error("Failed to set buffer title after 10 attempts: %s", err)
                 vim.notify("Failed to set buffer title: " .. err, vim.log.levels.ERROR)
                 return
             end
+            log:debug("Title collision, retrying with attempt %d", attempt + 1)
             self:_set_buf_title(bufnr, final_title, attempt + 1)
+        else
+            log:debug("Successfully set buffer title for buffer %d", bufnr)
         end
     end)
 end
@@ -145,19 +153,23 @@ local function format_chat_items(chats)
 end
 
 function UI:open_saved_chats()
+    log:debug("Opening saved chats browser")
     local index = self.storage:load_chats()
     if vim.tbl_isempty(index) then
+        log:info("No saved chats found")
         vim.notify("No chat history found", vim.log.levels.INFO)
         return
     end
 
     -- Format the index for display
     local items = format_chat_items(index)
+    log:debug("Loaded %d saved chats", #items)
 
     -- Get picker
     local is_picker_available, resolved_picker =
         pcall(require, "codecompanion._extensions.history.pickers." .. self.picker)
     if not is_picker_available then
+        log:debug("Requested picker '%s' not available, falling back to default", self.picker)
         resolved_picker = require("codecompanion._extensions.history.pickers.default")
     elseif self.picker ~= "default" then
         require(self.picker)
@@ -176,16 +188,19 @@ function UI:open_saved_chats()
                 if full_chat then
                     return self:_get_preview_lines(full_chat)
                 else
+                    log:warn("Failed to load chat data for preview: %s", chat_data.save_id)
                     return { "Chat data not available" }
                 end
             end,
             ---@param chat_data ChatData
             on_delete = function(chat_data)
+                log:debug("Deleting chat: %s", chat_data.save_id)
                 self.storage:delete_chat(chat_data.save_id)
                 self:open_saved_chats()
             end,
             ---@param chat_data ChatData
             on_select = function(chat_data)
+                log:debug("Selected chat: %s", chat_data.save_id)
                 local chat_module = require("codecompanion.strategies.chat")
                 local opened_chats = chat_module.buf_get_chat()
                 local active_chat = codecompanion.last_chat()
@@ -198,6 +213,7 @@ function UI:open_saved_chats()
                             end
                             data.chat.ui:open()
                         else
+                            log:info("Chat already open: %s", chat_data.save_id)
                             vim.notify("Chat already open", vim.log.levels.INFO)
                         end
                         return
@@ -209,16 +225,19 @@ function UI:open_saved_chats()
                 if full_chat then
                     self:create_chat(full_chat)
                 else
+                    log:error("Failed to load chat: %s", chat_data.save_id)
                     vim.notify("Failed to load chat", vim.log.levels.ERROR)
                 end
             end,
         })
         :browse(last_chat and last_chat.opts.save_id)
 end
+
 ---Creates a new chat from the given chat data restoring what it can
 ---@param chat_data? ChatData
 ---@return Chat
 function UI:create_chat(chat_data)
+    log:debug("Creating new chat from saved data")
     chat_data = chat_data or {}
     local messages = chat_data.messages or {}
     local save_id = chat_data.save_id
@@ -228,6 +247,7 @@ function UI:create_chat(chat_data)
 
     --HACK: Ensure last message is from user to show header
     if #messages > 0 and messages[#messages].role ~= "user" then
+        log:trace("Adding empty user message to ensure header visibility")
         table.insert(messages, {
             role = "user",
             content = "",
@@ -236,7 +256,6 @@ function UI:create_chat(chat_data)
     end
     local context_utils = require("codecompanion.utils.context")
     local last_active_buffer = require("codecompanion._extensions.history.utils").get_editor_info().last_active
-    -- vim.notify(vim.api.nvim_buf_get_name(last_active_buffer and last_active_buffer.bufnr or 0))
     local context = context_utils.get(last_active_buffer and last_active_buffer.bufnr or nil)
     local chat = require("codecompanion.strategies.chat").new({
         save_id = save_id,
@@ -249,6 +268,7 @@ function UI:create_chat(chat_data)
     chat.references:render()
     chat.tools.schemas = chat_data.schemas or {}
     chat.tools.in_use = chat_data.in_use or {}
+    log:debug("Successfully created chat with save_id: %s", save_id or "N/A")
     return chat
 end
 
@@ -303,6 +323,7 @@ end
 ---@param chat Chat
 ---@param saved_at number
 function UI:update_last_saved(chat, saved_at)
+    log:debug("Updating last saved time for chat: %s", chat.opts.save_id or "N/A")
     --saved at icon
     local icon = " "
     self:_set_buf_title(chat.bufnr, { chat.opts.title or self.default_buf_title, icon .. utils.format_time(saved_at) })

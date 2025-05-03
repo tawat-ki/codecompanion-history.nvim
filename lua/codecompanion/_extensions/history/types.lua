@@ -11,6 +11,7 @@
 ---@field delete_on_clearing_chat? boolean When chat is cleared with `gx` delete the chat from history
 ---@field keymap? string Keymap to open saved chats from the chat buffer
 ---@field picker? Pickers Picker to use (telescope, etc.)
+---@field enable_logging? boolean Enable logging for history extension
 
 ---@class Chat
 ---@field opts {title:string, save_id: string}

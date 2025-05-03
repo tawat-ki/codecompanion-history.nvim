@@ -6,6 +6,7 @@ local Storage = {}
 
 -- File I/O utility functions
 local FileUtils = {}
+local log = require("codecompanion._extensions.history.log")
 
 ---Read and decode a JSON file
 ---@param file_path string Path to the file
@@ -15,16 +16,19 @@ function FileUtils.read_json(file_path)
     local path = Path:new(file_path)
 
     if not path:exists() then
+        log:debug("File does not exist: %s", file_path)
         return { ok = false, data = nil, error = "File does not exist: " .. file_path }
     end
 
     local content, read_error = path:read()
     if not content then
+        log:error("Failed to read file: %s - %s", file_path, read_error or "unknown error")
         return { ok = false, data = nil, error = "Failed to read file: " .. (read_error or "unknown error") }
     end
 
     local success, data = pcall(vim.json.decode, content)
     if not success then
+        log:error("Failed to parse JSON from file: %s - %s", file_path, data)
         return { ok = false, data = nil, error = "Failed to parse JSON: " .. tostring(data) }
     end
 
@@ -42,16 +46,19 @@ function FileUtils.write_json(file_path, data)
     -- Ensure parent directory exists
     local parent = path:parent()
     if not parent:exists() then
+        log:debug("Creating parent directory: %s", parent:absolute())
         parent:mkdir({ parents = true })
     end
 
     -- Fix: Ensure data is a table
     if type(data) ~= "table" then
+        log:error("Cannot encode non-table data for file: %s", file_path)
         return { ok = false, error = "Cannot encode non-table data" }
     end
 
     local encoded, encode_error = vim.json.encode(data)
     if not encoded then
+        log:error("Failed to encode JSON for file: %s - %s", file_path, encode_error or "unknown error")
         return { ok = false, error = "Failed to encode JSON: " .. (encode_error or "unknown error") }
     end
 
@@ -59,6 +66,7 @@ function FileUtils.write_json(file_path, data)
         return path:write(encoded, "w")
     end)
     if not success then
+        log:error("Failed to write file: %s - %s", file_path, write_error or "unknown error")
         return { ok = false, error = "Failed to write file: " .. (write_error or "unknown error") }
     end
 
@@ -73,16 +81,19 @@ function FileUtils.delete_file(file_path)
     local path = Path:new(file_path)
 
     if not path:exists() then
-        return { ok = true, error = nil } -- File doesn't exist, consider it success
+        log:debug("File to delete does not exist: %s", file_path)
+        return { ok = true, error = nil }
     end
 
     local success, err = pcall(function()
         return path:rm()
     end)
     if not success then
+        log:error("Failed to delete file: %s - %s", file_path, err or "unknown error")
         return { ok = false, error = "Failed to delete file: " .. (err or "unknown error") }
     end
 
+    log:debug("Successfully deleted file: %s", file_path)
     return { ok = true, error = nil }
 end
 
@@ -97,6 +108,7 @@ function Storage.new()
     self.index_path = self.base_path .. "/index.json"
     self.chats_dir = self.base_path .. "/chats"
 
+    log:debug("Initializing storage with base path: %s", self.base_path)
     -- Ensure storage directories exist
     self:_ensure_storage_dirs()
 
@@ -109,22 +121,25 @@ function Storage:_ensure_storage_dirs()
     -- Create base directory
     local base_dir = Path:new(self.base_path)
     if not base_dir:exists() then
+        log:debug("Creating base directory: %s", self.base_path)
         base_dir:mkdir({ parents = true })
     end
 
     -- Create chats directory
     local chats_dir = Path:new(self.chats_dir)
     if not chats_dir:exists() then
+        log:debug("Creating chats directory: %s", self.chats_dir)
         chats_dir:mkdir({ parents = true })
     end
 
     -- Initialize index file if it doesn't exist
     local index_path = Path:new(self.index_path)
     if not index_path:exists() then
+        log:debug("Initializing empty index file: %s", self.index_path)
         local empty_index = {}
         local result = FileUtils.write_json(self.index_path, empty_index)
         if not result.ok then
-            vim.notify("Failed to initialize index file: " .. result.error, vim.log.levels.ERROR)
+            log:error("Failed to initialize index file: %s", result.error)
         end
     end
 end
@@ -133,12 +148,14 @@ end
 ---@return {ok: boolean, error: string|nil}
 function Storage:_save_chat_to_file(chat_data)
     local chat_path = self.chats_dir .. "/" .. chat_data.save_id .. ".json"
+    log:debug("Saving chat to file: %s", chat_path)
     return FileUtils.write_json(chat_path, chat_data)
 end
 
 ---@param chat_data ChatData
 ---@return {ok: boolean, error: string|nil}
 function Storage:_update_index_entry(chat_data)
+    log:debug("Updating index entry for chat: %s", chat_data.save_id)
     -- Read current index
     local index_result = FileUtils.read_json(self.index_path)
     if not index_result.ok then
@@ -162,19 +179,19 @@ end
 ---Load all chats from storage (index only)
 ---@return table<string, ChatData>
 function Storage:load_chats()
+    log:debug("Loading chat index")
     local result = FileUtils.read_json(self.index_path)
     if not result.ok then
         if result.error:match("does not exist") then
-            -- If index doesn't exist, initialize it
+            log:debug("Index file does not exist, initializing storage")
             self:_ensure_storage_dirs()
             return {}
         else
-            vim.notify("Failed to read chat index: " .. result.error, vim.log.levels.ERROR)
+            log:error("Failed to read chat index: %s", result.error)
             return {}
         end
     end
 
-    -- Ensure we return a table even if data is nil
     return result.data or {}
 end
 
@@ -183,11 +200,12 @@ end
 ---@return ChatData|nil
 function Storage:load_chat(id)
     local chat_path = self.chats_dir .. "/" .. id .. ".json"
+    log:debug("Loading chat from: %s", chat_path)
     local result = FileUtils.read_json(chat_path)
 
     if not result.ok then
         if not result.error:match("does not exist") then
-            vim.notify("Failed to load chat: " .. result.error, vim.log.levels.ERROR)
+            log:error("Failed to load chat: %s", result.error)
         end
         return nil
     end
@@ -200,10 +218,11 @@ end
 function Storage:save_chat(chat)
     local save_id = chat.opts.save_id
     if not save_id then
-        vim.notify("Can't save chat with no id", vim.log.levels.ERROR)
+        log:error("Cannot save chat: missing save_id")
         return
     end
 
+    log:debug("Saving chat: %s", save_id)
     -- Create chat data object
     local chat_data = {
         save_id = save_id,
@@ -218,14 +237,14 @@ function Storage:save_chat(chat)
     -- Save chat to file
     local save_result = self:_save_chat_to_file(chat_data)
     if not save_result.ok then
-        vim.notify("Failed to save chat: " .. save_result.error, vim.log.levels.ERROR)
+        log:error("Failed to save chat: %s", save_result.error)
         return
     end
 
     -- Update index
     local index_result = self:_update_index_entry(chat_data)
     if not index_result.ok then
-        vim.notify("Failed to update index: " .. index_result.error, vim.log.levels.ERROR)
+        log:error("Failed to update index: %s", index_result.error)
     end
 end
 
@@ -233,21 +252,22 @@ end
 ---@param id string
 function Storage:delete_chat(id)
     if not id then
-        vim.notify("Can't delete chat with no id", vim.log.levels.ERROR)
+        log:error("Cannot delete chat: missing id")
         return
     end
 
+    log:debug("Deleting chat: %s", id)
     -- Delete the chat file
     local chat_path = self.chats_dir .. "/" .. id .. ".json"
     local delete_result = FileUtils.delete_file(chat_path)
     if not delete_result.ok then
-        vim.notify("Failed to delete chat file: " .. delete_result.error, vim.log.levels.ERROR)
+        log:error("Failed to delete chat file: %s", delete_result.error)
     end
 
     -- Remove from index
     local index_result = FileUtils.read_json(self.index_path)
     if not index_result.ok then
-        vim.notify("Failed to read index for deletion: " .. index_result.error, vim.log.levels.ERROR)
+        log:error("Failed to read index for deletion: %s", index_result.error)
         return
     end
 
@@ -260,13 +280,14 @@ function Storage:delete_chat(id)
     -- Save updated index
     local write_result = FileUtils.write_json(self.index_path, index)
     if not write_result.ok then
-        vim.notify("Failed to update index after deletion: " .. write_result.error, vim.log.levels.ERROR)
+        log:error("Failed to update index after deletion: %s", write_result.error)
     end
 end
 
 ---Get the most recently updated chat from storage
 ---@return ChatData|nil
 function Storage:get_last_chat()
+    log:debug("Getting most recent chat")
     local index = self:load_chats()
     if vim.tbl_isempty(index) then
         return nil
@@ -285,6 +306,7 @@ function Storage:get_last_chat()
 
     -- If we found a recent chat, load and return it
     if most_recent then
+        log:debug("Found most recent chat: %s", most_recent)
         return self:load_chat(most_recent)
     end
 

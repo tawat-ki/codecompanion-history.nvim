@@ -7,6 +7,7 @@
 ---@field new fun(opts: HistoryOpts): History
 
 local History = {}
+local log = require("codecompanion._extensions.history.log")
 
 ---@type HistoryOpts
 local default_opts = {
@@ -21,6 +22,8 @@ local default_opts = {
     keymap = "gh",
     ---@type Pickers
     picker = "telescope",
+    ---Enable detailed logging for history extension
+    enable_logging = false,
 }
 
 ---@type History|nil
@@ -37,6 +40,7 @@ function History.new(opts)
     history.title_generator = require("codecompanion._extensions.history.title_generator").new(opts)
     history.ui = require("codecompanion._extensions.history.ui").new(opts, history.storage, history.title_generator)
     history.should_load_last_chat = opts.continue_last_chat
+
     -- Setup commands
     history:_create_commands()
     history:_setup_autocommands()
@@ -64,29 +68,41 @@ function History:_setup_autocommands()
             --   from_prompt_library = false,
             --   id = 7463137
             -- },
+            log:debug("Chat created event received")
             local chat_module = require("codecompanion.strategies.chat")
             local bufnr = opts.data.bufnr
             local chat = chat_module.buf_get_chat(bufnr)
+
             if self.should_load_last_chat then
+                log:debug("Attempting to load last chat")
                 self.should_load_last_chat = false
                 local last_saved_chat = self.storage:get_last_chat()
                 if last_saved_chat then
+                    log:debug("Restoring last saved chat")
                     chat:close()
                     self.ui:create_chat(last_saved_chat)
                     return
                 end
             end
             -- Set initial buffer title if present that we passed while creating a chat from history
+
+            -- Set initial buffer title
             if chat.opts.title then
+                log:trace("Setting existing chat title: %s", chat.opts.title)
                 self.ui:_set_buf_title(chat.bufnr, chat.opts.title)
             else
                 --set title to tell that this is a auto saving chat
-                self.ui:_set_buf_title(chat.bufnr, self:_get_title(chat))
+                local title = self:_get_title(chat)
+                log:trace("Setting default chat title: %s", title)
+                self.ui:_set_buf_title(chat.bufnr, title)
             end
-            --Check if out custom save_id is present, else generate a new one to be used to save the chat
+
+            --Check if custom save_id exists, else generate
             if not chat.opts.save_id then
                 chat.opts.save_id = tostring(os.time() + math.random(10000))
+                log:trace("Generated new save_id: %s", chat.opts.save_id)
             end
+
             self:_subscribe_to_chat(chat)
         end),
     })
@@ -95,21 +111,25 @@ function History:_setup_autocommands()
         pattern = "CodeCompanionChatCleared",
         group = group,
         callback = vim.schedule_wrap(function(opts)
-            -- data = {
-            --   bufnr = 5,
-            --   id = 7463137
-            -- },
+            log:debug("Chat cleared event received")
+
             local chat_module = require("codecompanion.strategies.chat")
             local bufnr = opts.data.bufnr
             local chat = chat_module.buf_get_chat(bufnr)
+
             if self.opts.delete_on_clearing_chat then
+                log:debug("Deleting cleared chat from storage: %s", chat.opts.save_id)
                 self.storage:delete_chat(chat.opts.save_id)
             end
-            self.ui:_set_buf_title(chat.bufnr, self:_get_title(chat))
-            --set title to nil so that we can generate it again
+
+            local title = self:_get_title(chat)
+            log:debug("Resetting chat title: %s", title)
+            self.ui:_set_buf_title(chat.bufnr, title)
+
+            -- Reset chat state
             chat.opts.title = nil
-            --generate a new save_id to be used to save the chat
             chat.opts.save_id = tostring(os.time() + math.random(10000))
+            log:trace("Generated new save_id after clear: %s", chat.opts.save_id)
         end),
     })
 end
@@ -142,8 +162,10 @@ function History:_subscribe_to_chat(chat)
         data = {},
         callback = function(chat_instance)
             if self.opts.auto_generate_title and not chat_instance.opts.title then
+                log:debug("Attempting to generate title for chat: %s", chat_instance.opts.save_id)
                 self.title_generator:generate(chat_instance, function(generated_title)
                     if generated_title and generated_title ~= "" then
+                        log:debug("Setting generated title: %s", generated_title)
                         self.ui:_set_buf_title(chat_instance.bufnr, generated_title)
                         if generated_title == "Deciding title..." then
                             return
@@ -152,7 +174,9 @@ function History:_subscribe_to_chat(chat)
                         --save the title to history
                         self.storage:save_chat(chat_instance)
                     else
-                        self.ui:_set_buf_title(chat_instance.bufnr, self:_get_title(chat_instance))
+                        local title = self:_get_title(chat_instance)
+                        log:debug("Using default title: %s", title)
+                        self.ui:_set_buf_title(chat_instance.bufnr, title)
                     end
                 end)
             end
@@ -166,7 +190,11 @@ return {
     ---@param opts HistoryOpts
     setup = function(opts)
         if not history_instance then
-            history_instance = History.new(vim.tbl_deep_extend("force", default_opts, opts or {}))
+            -- Initialize logging first
+            opts = vim.tbl_deep_extend("force", default_opts, opts or {})
+            log.setup_logging(opts.enable_logging)
+            history_instance = History.new(opts)
+            log:info("History extension setup successfully")
         end
     end,
 }
