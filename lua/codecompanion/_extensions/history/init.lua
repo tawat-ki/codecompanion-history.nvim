@@ -153,10 +153,4 @@ return {
             history_instance = History.new(vim.tbl_deep_extend("force", default_opts, opts or {}))
         end
     end,
-    exports = {
-        ---@return string filepath
-        get_saved_location = function()
-            return History.opts.file_path
-        end,
-    },
 }

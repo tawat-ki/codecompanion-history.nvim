@@ -131,18 +131,6 @@ Chat titles are automatically generated based on the context of your conversatio
 - Let the extension auto-generate titles (controlled by `auto_generate_title`)
 - See the titles updated in real-time as you chat
 
-### API
-
-The extension exports these functions that can be accessed via:
-
-```lua
-local history = require("codecompanion").extensions.history
-```
-
-#### Functions
-
-- `get_saved_location()` - Get the path where chats are saved
-
 ## TODOs
 
 - [ ] Add support for additional pickers like snacks, fzf etc
