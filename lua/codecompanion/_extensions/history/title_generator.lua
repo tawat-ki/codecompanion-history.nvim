@@ -69,8 +69,8 @@ Assistant: %s
 ---
 
 Title:]],
-        first_user_msg.content:sub(1, 500),
-        first_llm_msg and first_llm_msg.content:sub(1, 500) or ""
+        (first_user_msg.content or ""):sub(1, 500),
+        first_llm_msg and (first_llm_msg.content or ""):sub(1, 500) or ""
     )
     self:_make_adapter_request(chat, prompt, callback)
 end

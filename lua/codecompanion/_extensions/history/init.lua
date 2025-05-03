@@ -125,11 +125,11 @@ function History:_subscribe_to_chat(chat)
             if self.opts.auto_generate_title and not chat_instance.opts.title then
                 self.title_generator:generate(chat_instance, function(generated_title)
                     if generated_title and generated_title ~= "" then
-                        chat_instance.opts.title = generated_title
                         self.ui:_set_buf_title(chat_instance.bufnr, generated_title)
                         if generated_title == "Deciding title..." then
                             return
                         end
+                        chat_instance.opts.title = generated_title
                         --save the title to history
                         self.storage:save_chat(chat_instance)
                     else
