@@ -89,8 +89,6 @@ require("codecompanion").setup({
         history = {
             enabled = true,
             opts = {
-                -- Path to store chat history
-                file_path = vim.fn.stdpath("data") .. "/codecompanion_chats.json",
                 -- Automatically generate titles for new chats
                 auto_generate_title = true,
                 -- Default buffer title when no title is set

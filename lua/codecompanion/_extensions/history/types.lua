@@ -6,6 +6,7 @@
 
 ---@class Chat
 ---@field opts {title:string, save_id: string}
+---@diagnostic disable-next-line: duplicate-doc-field
 ---@field messages ChatMessage[]
 ---@field id number
 ---@field bufnr number

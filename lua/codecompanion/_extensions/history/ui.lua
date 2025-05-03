@@ -144,34 +144,40 @@ local function format_chat_items(chats)
     return items
 end
 
----@return nil
 function UI:open_saved_chats()
-    local chats = self.storage:load_chats()
-    if vim.tbl_isempty(chats) then
+    local index = self.storage:load_chats()
+    if vim.tbl_isempty(index) then
         vim.notify("No chat history found", vim.log.levels.INFO)
         return
     end
-    -- Use picker instance
-    local items = format_chat_items(chats)
+
+    -- Format the index for display
+    local items = format_chat_items(index)
+
+    -- Get picker
     local is_picker_available, resolved_picker =
         pcall(require, "codecompanion._extensions.history.pickers." .. self.picker)
     if not is_picker_available then
         resolved_picker = require("codecompanion._extensions.history.pickers.default")
-        -- vim.notify(
-        -- 	string.format("Codecompanion History: Picker %s not available using default", self.picker),
-        -- 	vim.log.levels.WARN
-        -- )
     elseif self.picker ~= "default" then
         require(self.picker)
     end
+    ---@diagnostic disable-next-line: different-requires
     local codecompanion = require("codecompanion")
     local last_chat = codecompanion.last_chat()
+
     resolved_picker
         :new(items, {
             ---@param chat_data ChatData
             ---@return string[] lines
             on_preview = function(chat_data)
-                return self:_get_preview_lines(chat_data)
+                -- Load full chat data for preview
+                local full_chat = self.storage:load_chat(chat_data.save_id)
+                if full_chat then
+                    return self:_get_preview_lines(full_chat)
+                else
+                    return { "Chat data not available" }
+                end
             end,
             ---@param chat_data ChatData
             on_delete = function(chat_data)
@@ -183,6 +189,7 @@ function UI:open_saved_chats()
                 local chat_module = require("codecompanion.strategies.chat")
                 local opened_chats = chat_module.buf_get_chat()
                 local active_chat = codecompanion.last_chat()
+
                 for _, data in ipairs(opened_chats) do
                     if data.chat.opts.save_id == chat_data.save_id then
                         if (active_chat and not active_chat.ui:is_active()) or active_chat ~= data.chat then
@@ -196,12 +203,18 @@ function UI:open_saved_chats()
                         return
                     end
                 end
-                self:create_chat(chat_data)
+
+                -- Load full chat data when selecting
+                local full_chat = self.storage:load_chat(chat_data.save_id)
+                if full_chat then
+                    self:create_chat(full_chat)
+                else
+                    vim.notify("Failed to load chat", vim.log.levels.ERROR)
+                end
             end,
         })
         :browse(last_chat and last_chat.opts.save_id)
 end
-
 ---Creates a new chat from the given chat data restoring what it can
 ---@param chat_data? ChatData
 ---@return Chat

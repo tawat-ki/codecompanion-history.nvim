@@ -9,7 +9,6 @@ local History = {}
 
 ---@class HistoryOpts
 local default_opts = {
-    file_path = vim.fn.stdpath("data") .. "/codecompanion_chats.json",
     auto_generate_title = true,
     default_buf_title = "[CodeCompanion]",
     keymap = "gh",
@@ -27,7 +26,7 @@ function History.new(opts)
         __index = History,
     })
     history.opts = opts
-    history.storage = require("codecompanion._extensions.history.storage").new(opts)
+    history.storage = require("codecompanion._extensions.history.storage").new()
     history.title_generator = require("codecompanion._extensions.history.title_generator").new(opts)
     history.ui = require("codecompanion._extensions.history.ui").new(opts, history.storage, history.title_generator)
     -- Setup commands
