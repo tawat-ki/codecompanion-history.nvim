@@ -7,6 +7,9 @@
 
 A history management extension for [codecompanion.nvim](https://codecompanion.olimorris.dev/) that enables saving, browsing and restoring chat sessions.
 
+> [!NOTE]
+> **Warning**: This extension is not yet ready for use.
+
 ## Features
 
 - 💾 Automatic chat session saving with context preservation
