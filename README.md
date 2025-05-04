@@ -86,7 +86,7 @@ The history browser shows all your saved chats with:
 
 Actions in history browser:
 - `<CR>` - Open selected chat
-- `x` - Delete selected chat (Doesn't apply to default vim.ui.select)
+- `d` - Delete selected chat in normal mode (Doesn't apply to default vim.ui.select)
 
 #### Title Generation
 

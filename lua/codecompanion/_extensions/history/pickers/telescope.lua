@@ -53,7 +53,7 @@ function TelescopePicker:browse(current_save_id)
                         self.handlers.on_delete(selection)
                     end
                 end
-                vim.keymap.set({ "i", "n" }, "x", delete_item, {
+                vim.keymap.set({ "n" }, "d", delete_item, {
                     buffer = prompt_bufnr,
                     silent = true,
                     nowait = true,
