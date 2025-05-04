@@ -109,7 +109,7 @@ function UI:_set_buf_title(bufnr, title, attempt)
         local icon = "✨ "
         -- throws error if buffer with same name already exists so we add a counter to the title
         local success, err = pcall(function()
-            local _title = final_title .. " " .. (attempt > 0 and "(" .. tostring(attempt) .. ")" or "")
+            local _title = final_title .. (attempt > 0 and " (" .. tostring(attempt) .. ")" or "")
             vim.api.nvim_buf_set_name(bufnr, icon .. _title)
         end)
 

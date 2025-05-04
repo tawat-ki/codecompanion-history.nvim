@@ -5,7 +5,7 @@ local T = new_set()
 local child = h.new_child_neovim()
 T = new_set({
     hooks = {
-        pre_once = function()
+        pre_case = function()
             child.setup()
             child.lua([[
               h = require('tests.helpers')

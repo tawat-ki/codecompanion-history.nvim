@@ -198,4 +198,6 @@ return {
         end
     end,
     exports = {},
+    --for testing
+    History = History,
 }
