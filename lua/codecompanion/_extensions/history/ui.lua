@@ -292,6 +292,35 @@ function UI:_get_preview_lines(chat_data)
     local assistant_role = config.constants.LLM_ROLE
     local last_role
     local last_set_role
+    local function render_references(refs)
+        if vim.tbl_isempty(refs) then
+            return self
+        end
+        table.insert(lines, "> Context:")
+        local icons_path = config.display.chat.icons
+        local icons = {
+            pinned = icons_path.pinned_buffer,
+            watched = icons_path.watched_buffer,
+        }
+        for _, ref in pairs(refs) do
+            if not ref or (ref.opts and ref.opts.visible == false) then
+                goto continue
+            end
+            if ref.opts and ref.opts.pinned then
+                table.insert(lines, string.format("> - %s%s", icons.pinned, ref.id))
+            elseif ref.opts and ref.opts.watched then
+                table.insert(lines, string.format("> - %s%s", icons.watched, ref.id))
+            else
+                table.insert(lines, string.format("> - %s", ref.id))
+            end
+            ::continue::
+        end
+        if #lines == 1 then
+            -- no ref added
+            return
+        end
+        table.insert(lines, "")
+    end
     local function add_messages_to_buf(msgs)
         for i, msg in ipairs(msgs) do
             if (msg.role ~= system_role) and not (msg.opts and msg.opts.visible == false) then
@@ -339,6 +368,7 @@ function UI:_get_preview_lines(chat_data)
         table.insert(lines, "---")
         spacer()
     end
+    render_references(chat_data.refs)
     if vim.tbl_isempty(chat_data.messages) then
         set_header(lines, user_role)
         spacer()
