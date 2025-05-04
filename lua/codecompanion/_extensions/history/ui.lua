@@ -264,7 +264,9 @@ function UI:create_chat(chat_data)
         settings = chat_data.settings,
         adapter = chat_data.adapter,
         title = title,
-        ignore_system_prompt = true,
+        --INFO: No need to ignore system prompt here, thanks to oli we don't add system messages with same tag (`from_config`) twice.
+        -- This also fixes `gx` removing the system prompt from the chat if we pass `ignore_system_prompt = true`
+        -- ignore_system_prompt = true,
     })
     chat.refs = chat_data.refs or {}
     chat.references:render()
