@@ -43,7 +43,7 @@ function TitleGenerator:generate(chat, callback)
         return msg.role == config.constants.USER_ROLE
     end, chat.messages)
     local non_tag_messages = vim.tbl_filter(function(msg)
-        return not (msg.opts and msg.opts.tag == nil)
+        return not (msg.opts and msg.opts.tag)
     end, user_messages)
 
     local first_user_msg = non_tag_messages[1] or user_messages[1]
