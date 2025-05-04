@@ -31,53 +31,53 @@ function TitleGenerator:generate(chat, callback)
         return callback(chat.opts.title)
     end
     callback("Deciding title...")
+
     -- Return early if no messages
     if #chat.messages == 0 then
         log:debug("No messages found in chat, skipping title generation")
         return callback(nil)
     end
-    -- Get first user and llm messages
-    local first_user_msg, first_llm_msg
-    for _, msg in ipairs(chat.messages) do
-        if not first_user_msg and msg.role == config.constants.USER_ROLE then
-            first_user_msg = msg
-        elseif not first_llm_msg and msg.role == config.constants.LLM_ROLE then
-            first_llm_msg = msg
-        end
-        if first_user_msg and first_llm_msg then
-            break
-        end
-    end
+
+    -- Filter user messages and sort them by index
+    local user_messages = vim.tbl_filter(function(msg)
+        return msg.role == config.constants.USER_ROLE
+    end, chat.messages)
+    local non_tag_messages = vim.tbl_filter(function(msg)
+        return not (msg.opts and msg.opts.tag == nil)
+    end, user_messages)
+
+    local first_user_msg = non_tag_messages[1] or user_messages[1]
     if not first_user_msg then
         log:debug("No user message found in chat, skipping title generation")
         return callback(nil)
     end
 
+    -- Truncate content and add ellipsis if needed
+    local content = vim.trim(first_user_msg.content or "")
+    if content == "" then
+        return callback(nil)
+    end
+    local truncated_content = content:sub(1, 1000)
+    if #content > 1000 then
+        truncated_content = truncated_content .. "..."
+    end
     log:debug("Generating title for chat with save_id: %s", chat.opts.save_id or "N/A")
     -- Create prompt for title generation
     local prompt = string.format(
-        [[Generate a very short and concise title (max 5 words) for this chat based on the following conversation:
-Do not include any special characters or quotes. Your response shouldn't contain any other text, just the title.
+        [[Generate a very short and concise title (max 5 words) for this chat based on the following user query:
+Do not include any special characters or quotes. Your response shouldn't contain any other text, just the title. 
 
+===
 Examples: 
-
 1. User: What is the capital of France?
-   Assistant: The capital of France is Paris.
    Title: Capital of France
 2. User: How do I create a new file in Vim?
-   Assistant: You can create a new file in Vim by using the command :e filename.
-   Title: Vim Commands
+   Title: Vim File Creation
+===
 
----
 User: %s
-
-Assistant: %s
-
----
-
 Title:]],
-        (first_user_msg.content or ""):sub(1, 500),
-        first_llm_msg and (first_llm_msg.content or ""):sub(1, 500) or ""
+        truncated_content
     )
     self:_make_adapter_request(chat, prompt, callback)
 end

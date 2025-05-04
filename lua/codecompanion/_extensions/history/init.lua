@@ -106,6 +106,36 @@ function History:_setup_autocommands()
             self:_subscribe_to_chat(chat)
         end),
     })
+    vim.api.nvim_create_autocmd("User", {
+        pattern = "CodeCompanionChatSubmitted",
+        group = group,
+        callback = vim.schedule_wrap(function(opts)
+            log:trace("Chat submitted event received")
+            local chat_module = require("codecompanion.strategies.chat")
+            local bufnr = opts.data.bufnr
+            local chat = chat_module.buf_get_chat(bufnr)
+            if self.opts.auto_generate_title and not chat.opts.title then
+                log:debug("Attempting to generate title for chat: %s", chat.opts.save_id)
+                self.title_generator:generate(chat, function(generated_title)
+                    if generated_title and generated_title ~= "" then
+                        log:debug("Setting generated title: %s", generated_title)
+                        self.ui:_set_buf_title(chat.bufnr, generated_title)
+                        if generated_title == "Deciding title..." then
+                            return
+                        end
+                        chat.opts.title = generated_title
+                        --save the title to history
+                        self.storage:save_chat(chat)
+                    else
+                        local title = self:_get_title(chat)
+                        log:debug("Using default title: %s", title)
+                        self.ui:_set_buf_title(chat.bufnr, title)
+                    end
+                end)
+            end
+            self.storage:save_chat(chat)
+        end),
+    })
 
     vim.api.nvim_create_autocmd("User", {
         pattern = "CodeCompanionChatCleared",
@@ -161,25 +191,6 @@ function History:_subscribe_to_chat(chat)
         --INFO:data field is needed
         data = {},
         callback = function(chat_instance)
-            if self.opts.auto_generate_title and not chat_instance.opts.title then
-                log:debug("Attempting to generate title for chat: %s", chat_instance.opts.save_id)
-                self.title_generator:generate(chat_instance, function(generated_title)
-                    if generated_title and generated_title ~= "" then
-                        log:debug("Setting generated title: %s", generated_title)
-                        self.ui:_set_buf_title(chat_instance.bufnr, generated_title)
-                        if generated_title == "Deciding title..." then
-                            return
-                        end
-                        chat_instance.opts.title = generated_title
-                        --save the title to history
-                        self.storage:save_chat(chat_instance)
-                    else
-                        local title = self:_get_title(chat_instance)
-                        log:debug("Using default title: %s", title)
-                        self.ui:_set_buf_title(chat_instance.bufnr, title)
-                    end
-                end)
-            end
             self.storage:save_chat(chat_instance)
         end,
     })
