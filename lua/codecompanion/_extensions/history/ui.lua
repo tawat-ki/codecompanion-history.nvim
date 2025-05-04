@@ -270,6 +270,7 @@ function UI:create_chat(chat_data)
     chat.references:render()
     chat.tools.schemas = chat_data.schemas or {}
     chat.tools.in_use = chat_data.in_use or {}
+    chat.cycle = chat_data.cycle or 1
     log:debug("Successfully created chat with save_id: %s", save_id or "N/A")
     return chat
 end

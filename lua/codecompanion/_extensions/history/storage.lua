@@ -235,6 +235,7 @@ function Storage:save_chat(chat)
         refs = chat.refs,
         schemas = chat.tools.schemas,
         in_use = chat.tools.in_use,
+        cycle = chat.cycle,
     }
 
     -- Save chat to file

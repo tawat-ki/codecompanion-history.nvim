@@ -43,6 +43,7 @@
 ---@field schemas? table
 ---@field in_use? table
 ---@field name? string
+---@field cycle number
 
 ---@class UIHandlers
 ---@field on_preview fun(chat_data: ChatData): string[]
