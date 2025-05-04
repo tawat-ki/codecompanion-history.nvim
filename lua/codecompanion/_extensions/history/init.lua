@@ -99,7 +99,7 @@ function History:_setup_autocommands()
 
             --Check if custom save_id exists, else generate
             if not chat.opts.save_id then
-                chat.opts.save_id = tostring(os.time() + math.random(10000))
+                chat.opts.save_id = tostring(os.time())
                 log:trace("Generated new save_id: %s", chat.opts.save_id)
             end
 
