@@ -116,6 +116,8 @@ function TitleGenerator:_make_adapter_request(chat, prompt, callback)
                 end
             end
         end,
+    }, {
+        silent = true,
     })
 end
 

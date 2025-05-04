@@ -275,6 +275,7 @@ function UI:create_chat(chat_data)
     return chat
 end
 
+---[[Most of the code is copied from codecompanion/strategies/chat/ui.lua]]
 ---Retrieve the lines to be displayed in the preview window
 ---@param chat_data ChatData
 function UI:_get_preview_lines(chat_data)
@@ -294,7 +295,7 @@ function UI:_get_preview_lines(chat_data)
     local last_set_role
     local function render_references(refs)
         if vim.tbl_isempty(refs) then
-            return self
+            return
         end
         table.insert(lines, "> Context:")
         local icons_path = config.display.chat.icons
