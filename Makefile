@@ -31,12 +31,16 @@ docs: deps/panvimdoc
 		scripts/vimdoc.md \
 		-o doc/codecompanion-history.txt
 
-deps: deps/plenary.nvim deps/nvim-treesitter deps/mini.nvim deps/panvimdoc
+deps: deps/plenary.nvim deps/codecompanion deps/nvim-treesitter deps/mini.nvim deps/panvimdoc
 	@echo Pulling...
 
 deps/plenary.nvim:
 	@mkdir -p deps
 	git clone --filter=blob:none https://github.com/nvim-lua/plenary.nvim.git $@
+
+deps/codecompanion:
+	@mkdir -p deps
+	git clone --filter=blob:none https://github.com/olimorris/codecompanion.nvim.git $@
 
 deps/nvim-treesitter:
 	@mkdir -p deps

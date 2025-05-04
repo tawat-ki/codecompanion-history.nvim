@@ -1,6 +1,7 @@
 vim.cmd([[let &rtp.=','.getcwd()]])
 
 vim.cmd("set rtp+=./deps/plenary.nvim")
+vim.cmd("set rtp+=./deps/codecompanion")
 
 -- Set up 'mini.test' only when calling headless Neovim (like with `make test`)
 if #vim.api.nvim_list_uis() == 0 then
