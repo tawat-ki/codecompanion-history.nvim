@@ -261,6 +261,8 @@ function UI:create_chat(chat_data)
         save_id = save_id,
         messages = messages,
         context = context,
+        settings = chat_data.settings,
+        adapter = chat_data.adapter,
         title = title,
         ignore_system_prompt = true,
     })
@@ -275,14 +277,10 @@ end
 ---Retrieve the lines to be displayed in the preview window
 ---@param chat_data ChatData
 function UI:_get_preview_lines(chat_data)
-    local messages = chat_data.messages
     local lines = {}
-    local last_set_role
-
     local function spacer()
         table.insert(lines, "")
     end
-
     local function set_header(tbl, role)
         local header = "## " .. role
         table.insert(tbl, header)
@@ -291,32 +289,61 @@ function UI:_get_preview_lines(chat_data)
     local system_role = config.constants.SYSTEM_ROLE
     local user_role = config.constants.USER_ROLE
     local assistant_role = config.constants.LLM_ROLE
-
+    local last_role
+    local last_set_role
     local function add_messages_to_buf(msgs)
         for i, msg in ipairs(msgs) do
-            if msg.role ~= system_role or (msg.opts and msg.opts.visible ~= false) then
+            if (msg.role ~= system_role) and not (msg.opts and msg.opts.visible == false) then
                 -- For workflow prompts: Ensure main user role doesn't get spaced
-                if i > 1 and last_set_role ~= msg.role and msg.role ~= user_role then
+                if i > 1 and last_role ~= msg.role and msg.role ~= user_role then
                     spacer()
                 end
 
                 if msg.role == user_role and last_set_role ~= user_role then
-                    set_header(lines, user_role)
+                    if last_set_role ~= nil then
+                        spacer()
+                    end
+                    set_header(lines, "  User")
                 end
                 if msg.role == assistant_role and last_set_role ~= assistant_role then
-                    set_header(lines, assistant_role)
+                    set_header(lines, "  Assistant")
+                end
+
+                if msg.opts and msg.opts.tag == "tool_output" then
+                    table.insert(lines, "### Tool Output")
+                    table.insert(lines, "")
                 end
 
                 local trimempty = not (msg.role == "user" and msg.content == "")
                 for _, text in ipairs(vim.split(msg.content or "", "\n", { plain = true, trimempty = trimempty })) do
                     table.insert(lines, text)
                 end
+
                 last_set_role = msg.role
+                last_role = msg.role
+
+                -- The Chat:Submit method will parse the last message and it to the messages table
+                if i == #msgs then
+                    table.remove(msgs, i)
+                end
             end
         end
     end
 
-    add_messages_to_buf(messages)
+    if chat_data.settings then
+        lines = { "---" }
+        for key, value in pairs(chat_data.settings) do
+            table.insert(lines, string.format("%s: %s", key, vim.inspect(value)))
+        end
+        table.insert(lines, "---")
+        spacer()
+    end
+    if vim.tbl_isempty(chat_data.messages) then
+        set_header(lines, user_role)
+        spacer()
+    else
+        add_messages_to_buf(chat_data.messages)
+    end
     return lines
 end
 

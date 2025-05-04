@@ -224,10 +224,13 @@ function Storage:save_chat(chat)
 
     log:debug("Saving chat: %s", save_id)
     -- Create chat data object
+    ---@type ChatData
     local chat_data = {
         save_id = save_id,
         title = chat.opts.title,
         messages = chat.messages,
+        settings = chat.settings,
+        adapter = chat.adapter.name,
         updated_at = os.time(),
         refs = chat.refs,
         schemas = chat.tools.schemas,

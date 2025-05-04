@@ -37,6 +37,8 @@
 ---@field title? string
 ---@field messages ChatMessage[]
 ---@field updated_at number
+---@field settings table
+---@field adapter string
 ---@field refs? table
 ---@field schemas? table
 ---@field in_use? table
