@@ -122,7 +122,7 @@ function UI:_set_buf_title(bufnr, title, attempt)
             log:debug("Title collision, retrying with attempt %d", attempt + 1)
             self:_set_buf_title(bufnr, final_title, attempt + 1)
         else
-            log:debug("Successfully set buffer title for buffer %d", bufnr)
+            log:debug("Successfully set buffer title for buffer %d, %s", bufnr, final_title)
         end
     end)
 end

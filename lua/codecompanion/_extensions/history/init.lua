@@ -24,6 +24,8 @@ local default_opts = {
     picker = "telescope",
     ---Enable detailed logging for history extension
     enable_logging = false,
+    ---Directory path to save the chats
+    dir_to_save = vim.fn.stdpath("data") .. "/codecompanion-history",
 }
 
 ---@type History|nil
@@ -36,7 +38,7 @@ function History.new(opts)
         __index = History,
     })
     history.opts = opts
-    history.storage = require("codecompanion._extensions.history.storage").new()
+    history.storage = require("codecompanion._extensions.history.storage").new(opts)
     history.title_generator = require("codecompanion._extensions.history.title_generator").new(opts)
     history.ui = require("codecompanion._extensions.history.ui").new(opts, history.storage, history.title_generator)
     history.should_load_last_chat = opts.continue_last_chat
@@ -152,13 +154,14 @@ function History:_setup_autocommands()
                 self.storage:delete_chat(chat.opts.save_id)
             end
 
+            log:debug("Current title: %s", chat.opts.title)
             local title = self:_get_title(chat)
             log:debug("Resetting chat title: %s", title)
             self.ui:_set_buf_title(chat.bufnr, title)
 
             -- Reset chat state
             chat.opts.title = nil
-            chat.opts.save_id = tostring(os.time() + math.random(10000))
+            chat.opts.save_id = tostring(os.time())
             log:trace("Generated new save_id after clear: %s", chat.opts.save_id)
         end),
     })
@@ -187,9 +190,10 @@ end
 function History:_subscribe_to_chat(chat)
     -- Add subscription to save chat on every response from llm
     chat.subscribers:subscribe({
-        id = "save_messages_and_generate_title",
         --INFO:data field is needed
-        data = {},
+        data = {
+            name = "save_messages_and_generate_title",
+        },
         callback = function(chat_instance)
             self.storage:save_chat(chat_instance)
         end,

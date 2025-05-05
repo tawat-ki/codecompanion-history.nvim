@@ -87,6 +87,8 @@ require("codecompanion").setup({
                 picker = "telescope",
                 ---Enable detailed logging for history extension
                 enable_logging = false,
+                ---Directory path to save the chats
+                dir_to_save = vim.fn.stdpath("data") .. "/codecompanion-history",
             }
         }
     }
@@ -271,7 +273,12 @@ The extension integrates with CodeCompanion through a robust event-driven archit
 - [MCP Hub](https://codecompanion.olimorris.dev/extensions/mcphub.html) extension
 - [VectorCode](https://codecompanion.olimorris.dev/extensions/vectorcode.html) extension 
 
+## Acknowledgements
+
+Special thanks to [Oli Morris](https://github.com/olimorris) for creating the amazing [CodeCompanion.nvim](https://codecompanion.olimorris.dev) plugin - a highly configurable and powerful coding assistant for Neovim.
+
 ## License
 
 MIT
+
 

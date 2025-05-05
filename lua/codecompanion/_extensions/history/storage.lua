@@ -98,16 +98,14 @@ function FileUtils.delete_file(file_path)
 end
 
 ---@return Storage
-function Storage.new()
+function Storage.new(opts)
     local self = setmetatable({}, {
         __index = Storage,
     })
 
-    -- Set up fixed paths in the data directory
-    self.base_path = vim.fn.stdpath("data") .. "/codecompanion-history"
+    self.base_path = opts.dir_to_save:gsub("/+$", "")
     self.index_path = self.base_path .. "/index.json"
     self.chats_dir = self.base_path .. "/chats"
-
     log:debug("Initializing storage with base path: %s", self.base_path)
     -- Ensure storage directories exist
     self:_ensure_storage_dirs()
