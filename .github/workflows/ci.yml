@@ -1,10 +1,12 @@
-name: Continuous Integration
+name: Tests
 
 on:
   push:
     branches:
       - main
   pull_request: ~
+  schedule:
+    - cron: '0 */12 * * *'  # Runs every 12 hours
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.head_ref || github.sha }}
@@ -52,4 +54,6 @@ jobs:
           export VIM="${PWD}/_neovim/share/nvim/runtime"
           nvim --version
           make test
+
+
 
