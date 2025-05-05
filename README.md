@@ -11,7 +11,7 @@ A history management extension for [codecompanion.nvim](https://codecompanion.ol
 > [!CAUTION]
 > **Warning**: This extension is not yet ready for use.
 
-## Features
+## ✨ Features
 
 - 💾 Automatic chat session saving with context preservation
 - 🎯 Smart title generation for chats 
@@ -46,13 +46,13 @@ When restoring a chat:
 > [!NOTE]
 > As this is an extension that deeply integrates with CodeCompanion's internal APIs, occasional compatibility issues may arise when CodeCompanion updates. If you encounter any bugs or unexpected behavior, please [raise an issue](https://github.com/ravitemer/codecompanion-history.nvim/issues) to help us maintain compatibility.
 
-## Requirements
+## 📋 Requirements
 
 - Neovim >= 0.8.0
 - [codecompanion.nvim](https://codecompanion.olimorris.dev/)
 - [telescope.nvim](https://github.com/nvim-telescope/telescope.nvim) (optional, for enhanced picker)
 
-## Installation
+## 📦 Installation
 
 Using [lazy.nvim](https://github.com/folke/lazy.nvim):
 
@@ -96,17 +96,17 @@ require("codecompanion").setup({
 })
 ```
 
-## Usage 
+## 🛠️ Usage 
 
-#### Commands
+#### 🎯 Commands
 
 - `:CodeCompanionHistory` - Open the history browser
 
-#### Chat Buffer Keymaps
+#### ⌨️ Chat Buffer Keymaps
 
 - `gh` - Open history browser (customizable via `opts.keymap`)
 
-#### History Browser
+#### 📚 History Browser
 
 The history browser shows all your saved chats with:
 - Title (auto-generated or custom)
@@ -117,7 +117,7 @@ Actions in history browser:
 - `<CR>` - Open selected chat
 - `d` - Delete selected chat in normal mode (Doesn't apply to default vim.ui.select)
 
-#### API
+#### 🔧 API
 
 The history extension exports the following functions that can be accessed via `require("codecompanion").extensions.history`:
 
@@ -152,7 +152,7 @@ local chat_data = history.load_chat("some_save_id")
 history.delete_chat("some_save_id")
 ```
 
-## How It Works
+## ⚙️ How It Works
 
 
 ```mermaid
@@ -265,22 +265,24 @@ The extension integrates with CodeCompanion through a robust event-driven archit
 
 </details>
 
-## TODOs
+## 📝 TODOs
 
 - [ ] Add support for additional pickers like snacks, fzf etc
 
-## Related Extensions
+## 🔌 Related Extensions
 
 - [MCP Hub](https://codecompanion.olimorris.dev/extensions/mcphub.html) extension
 - [VectorCode](https://codecompanion.olimorris.dev/extensions/vectorcode.html) extension 
 
-## Acknowledgements
+## 🙏 Acknowledgements
 
 Special thanks to [Oli Morris](https://github.com/olimorris) for creating the amazing [CodeCompanion.nvim](https://codecompanion.olimorris.dev) plugin - a highly configurable and powerful coding assistant for Neovim.
 
-## License
+## 📄 License
 
 MIT
+
+
 
 
 
