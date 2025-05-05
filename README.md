@@ -103,7 +103,7 @@ require("codecompanion").setup({
 
 - `gh` - Open history browser (customizable via `opts.keymap`)
 
-#### History browser
+#### History Browser
 
 The history browser shows all your saved chats with:
 - Title (auto-generated or custom)
@@ -114,12 +114,40 @@ Actions in history browser:
 - `<CR>` - Open selected chat
 - `d` - Delete selected chat in normal mode (Doesn't apply to default vim.ui.select)
 
-#### Title Generation
+#### API
 
-Chat titles are automatically generated based on the context of your conversation. You can:
+The history extension exports the following functions that can be accessed via `require("codecompanion").extensions.history`:
 
-- Let the extension auto-generate titles (controlled by `auto_generate_title`)
-- See the titles updated in real-time as you chat
+```lua
+-- Get the storage location for saved chats
+get_location(): string?
+
+-- Save a chat to storage (uses last chat if none provided)
+save_chat(chat?: CodeCompanion.Chat)
+
+-- Get metadata for all saved chats
+get_chats(): table<string, ChatIndexData>
+
+-- Load a specific chat by its save_id
+load_chat(save_id: string): ChatData?
+
+-- Delete a chat by its save_id
+delete_chat(save_id: string): boolean
+```
+
+Example usage:
+```lua
+local history = require("codecompanion").extensions.history
+
+-- Get all saved chats metadata
+local chats = history.get_chats()
+
+-- Load a specific chat
+local chat_data = history.load_chat("some_save_id")
+
+-- Delete a chat
+history.delete_chat("some_save_id")
+```
 
 ## How It Works
 
@@ -246,3 +274,4 @@ The extension integrates with CodeCompanion through a robust event-driven archit
 ## License
 
 MIT
+

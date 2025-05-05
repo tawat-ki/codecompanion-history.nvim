@@ -208,7 +208,53 @@ return {
             log:info("History extension setup successfully")
         end
     end,
-    exports = {},
+    exports = {
+        ---Get the base path of the storage
+        ---@return string?
+        get_location = function()
+            if not history_instance then
+                return
+            end
+            return history_instance.storage:get_location()
+        end,
+        ---Save a chat to storage falling back to the last chat if none is provided
+        ---@param chat? Chat
+        save_chat = function(chat)
+            if not history_instance then
+                return
+            end
+            history_instance.storage:save_chat(chat)
+        end,
+
+        --- Loads chats metadata from the index, you need to use load_chat() to get the actual saved chat data
+        ---@return table<string, ChatIndexData>
+        get_chats = function()
+            if not history_instance then
+                return {}
+            end
+            return history_instance.storage:get_chats()
+        end,
+
+        --- Load a specific chat
+        ---@param save_id string ID from chat.opts.save_id to retreive the chat
+        ---@return ChatData?
+        load_chat = function(save_id)
+            if not history_instance then
+                return
+            end
+            return history_instance.storage:load_chat(save_id)
+        end,
+
+        ---Delete a chat
+        ---@param save_id string ID from chat.opts.save_id to retreive the chat
+        ---@return boolean
+        delete_chat = function(save_id)
+            if not history_instance then
+                return false
+            end
+            return history_instance.storage:delete_chat(save_id)
+        end,
+    },
     --for testing
     History = History,
 }

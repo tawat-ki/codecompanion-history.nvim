@@ -154,7 +154,7 @@ end
 
 function UI:open_saved_chats()
     log:debug("Opening saved chats browser")
-    local index = self.storage:load_chats()
+    local index = self.storage:get_chats()
     if vim.tbl_isempty(index) then
         log:info("No saved chats found")
         vim.notify("No chat history found", vim.log.levels.INFO)

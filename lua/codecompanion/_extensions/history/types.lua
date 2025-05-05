@@ -25,6 +25,7 @@
 ---@field references table
 ---@field subscribers {subscribe: function}
 ---@field ui {is_active: function, hide: function, open: function}
+---@field cycle number
 
 ---@class ChatMessage
 ---@field role string
@@ -44,6 +45,12 @@
 ---@field in_use? table
 ---@field name? string
 ---@field cycle number
+---
+
+---@class ChatIndexData
+---@field title string
+---@field updated_at number
+---@field save_id string
 
 ---@class UIHandlers
 ---@field on_preview fun(chat_data: ChatData): string[]

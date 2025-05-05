@@ -112,7 +112,13 @@ function Storage.new()
     -- Ensure storage directories exist
     self:_ensure_storage_dirs()
 
-    return self
+    return self --[[@as Storage]]
+end
+
+---Get the base path of the storage
+---@return string
+function Storage:get_location()
+    return self.base_path
 end
 
 function Storage:_ensure_storage_dirs()
@@ -177,8 +183,8 @@ function Storage:_update_index_entry(chat_data)
 end
 
 ---Load all chats from storage (index only)
----@return table<string, ChatData>
-function Storage:load_chats()
+---@return table<string, ChatIndexData>
+function Storage:get_chats()
     log:debug("Loading chat index")
     local result = FileUtils.read_json(self.index_path)
     if not result.ok then
@@ -191,7 +197,6 @@ function Storage:load_chats()
             return {}
         end
     end
-
     return result.data or {}
 end
 
@@ -210,12 +215,18 @@ function Storage:load_chat(id)
         return nil
     end
 
-    return result.data
+    return result.data --[[@as ChatData]]
 end
 
----Save a chat to storage
----@param chat Chat
+---Save a chat to storage falling back to the last chat if none is provided
+---@param chat? Chat
 function Storage:save_chat(chat)
+    if not chat then
+        chat = require("codecompanion").last_chat()
+        if not chat then
+            return
+        end
+    end
     local save_id = chat.opts.save_id
     if not save_id then
         log:error("Cannot save chat: missing save_id")
@@ -254,10 +265,11 @@ end
 
 ---Delete a chat from storage
 ---@param id string
+---@return boolean
 function Storage:delete_chat(id)
     if not id then
         log:error("Cannot delete chat: missing id")
-        return
+        return false
     end
 
     log:debug("Deleting chat: %s", id)
@@ -272,7 +284,7 @@ function Storage:delete_chat(id)
     local index_result = FileUtils.read_json(self.index_path)
     if not index_result.ok then
         log:error("Failed to read index for deletion: %s", index_result.error)
-        return
+        return false
     end
 
     -- Ensure we have a table to work with
@@ -285,14 +297,16 @@ function Storage:delete_chat(id)
     local write_result = FileUtils.write_json(self.index_path, index)
     if not write_result.ok then
         log:error("Failed to update index after deletion: %s", write_result.error)
+        return false
     end
+    return true
 end
 
 ---Get the most recently updated chat from storage
 ---@return ChatData|nil
 function Storage:get_last_chat()
     log:debug("Getting most recent chat")
-    local index = self:load_chats()
+    local index = self:get_chats()
     if vim.tbl_isempty(index) then
         return nil
     end
