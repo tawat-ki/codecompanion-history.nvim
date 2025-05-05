@@ -19,6 +19,32 @@ A history management extension for [codecompanion.nvim](https://codecompanion.ol
 - 🔍 Multiple picker interfaces
 - ⚡ Restore chat sessions with full context and tools state
 
+The following CodeCompanion features are preserved when saving and restoring chats:
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+|  System Prompts | ✅  | System prompt used in the chat |
+|  Messages History | ✅  | All messages |
+|  LLM Adapter | ✅  | The specific adapter used for the chat |
+|  LLM Settings | ✅  | Model, temperature and other adapter settings |
+|  Tools | ✅  | Tool schemas and their system prompts |
+|  Tool Outputs | ✅  | Tool execution results |
+|  Variables | ✅  | Variables used in the chat |
+|  References | ✅  | Code snippets and command outputs added via slash commands |
+|  Pinned References | ✅  | Pinned references |
+|  Watchers | ⚠  | Saved but requires original buffer context to resume watching |
+
+When restoring a chat:
+1. The complete message history is recreated
+2. All tools and references are reinitialized
+3. Original LLM settings and adapter are restored
+4. Previous system prompts are preserved
+
+> **Note**: While watched buffer states are saved, they require the original buffer context to resume watching functionality.
+
+> [!NOTE]
+> As this is an extension that deeply integrates with CodeCompanion's internal APIs, occasional compatibility issues may arise when CodeCompanion updates. If you encounter any bugs or unexpected behavior, please [raise an issue](https://github.com/ravitemer/codecompanion-history.nvim/issues) to help us maintain compatibility.
+
 ## Requirements
 
 - Neovim >= 0.8.0
