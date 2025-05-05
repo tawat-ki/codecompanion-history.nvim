@@ -77,6 +77,10 @@ return {
                     callback = "strategies.chat.agents.tools.files",
                     description = "Update the file system with the LLM's response",
                 },
+                ["weather"] = {
+                    callback = vim.fn.getcwd() .. "/tests/stubs/weather.lua",
+                    description = "Get the latest weather",
+                },
                 groups = {
                     ["tool_group"] = {
                         description = "Tool Group",

@@ -1,8 +1,8 @@
 local h = require("tests.helpers")
 local eq, new_set = MiniTest.expect.equality, MiniTest.new_set
 local T = new_set()
-
 local child = h.new_child_neovim()
+
 T = new_set({
     hooks = {
         pre_case = function()
@@ -21,6 +21,7 @@ T = new_set({
                       delete_on_clearing_chat = false,
                       picker = "default", -- Use default picker to avoid telescope dependency
                       enable_logging = true,
+                      dir_to_save = vim.fn.stdpath("data") .. "/codecompanion-history-test",
                     }
                   }
                 }
@@ -28,26 +29,41 @@ T = new_set({
             ]])
         end,
         post_case = function() end,
+
         post_once = child.stop,
     },
 })
 
-T["should update chat title"] = function()
-    child.lua([[
-    _G.History = require("codecompanion._extensions.history").History
-    _G.History._get_title = function()
-      return "AutoSavingChat"
-    end
-    _G.chat = codecompanion.toggle()
+-- Test the History module initialization
+T["History module"] = new_set()
+
+T["History module"]["should be loaded"] = function()
+    local history_exists = child.lua_get([[
+      package.loaded["codecompanion._extensions.history"] ~= nil
   ]])
-    --make sure the title is updated
-    h.sleep(1000)
-    local name = child.lua([[
-      local bufnr = _G.chat.bufnr
-      return vim.api.nvim_buf_get_name(bufnr)
-    ]])
-    if not vim.endswith(name, "AutoSavingChat") then
-        error("Chat buffer name should be updated")
-    end
+    eq(true, history_exists)
 end
+
+T["History module"]["available in codecompanion"] = function()
+    local has_property = child.lua_get([[
+      codecompanion.extensions.history ~= nil
+    ]])
+    eq(true, has_property)
+end
+
+T["History module"]["should register :CodeCompanionHistory command"] = function()
+    local has_command = child.lua_get([[
+      vim.fn.exists(":CodeCompanionHistory") == 2
+    ]])
+    eq(true, has_command)
+end
+
+T["History module"]["should register keymap"] = function()
+    local has_keymap = child.lua([[
+      local keymap = require("codecompanion.config").strategies.chat.keymaps["Saved Chats"]
+      return keymap and keymap.modes.n == "gh"
+    ]])
+    eq(true, has_keymap)
+end
+
 return T

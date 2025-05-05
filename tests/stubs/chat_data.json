@@ -1,0 +1,34 @@
+{
+  "schemas": [],
+  "in_use": [],
+  "cycle": 2,
+  "messages": [
+    {
+      "role": "system",
+      "cycle": 1,
+      "opts": {
+        "tag": "from_config",
+        "visible": false
+      },
+      "id": 660930231,
+      "content": "default system prompt"
+    },
+    {
+      "role": "llm",
+      "cycle": 1,
+      "opts": {
+        "visible": true
+      },
+      "id": 36639065,
+      "content": "Mocked Response"
+    }
+  ],
+  "updated_at": 1746450515,
+  "title": "Saved Title",
+  "settings": {
+    "model": "gpt-3.5-turbo"
+  },
+  "adapter": "test_adapter",
+  "save_id": "test_save_id",
+  "refs": []
+}

@@ -31,16 +31,30 @@ docs: deps/panvimdoc
 		scripts/vimdoc.md \
 		-o doc/codecompanion-history.txt
 
-deps: deps/plenary.nvim deps/codecompanion deps/nvim-treesitter deps/mini.nvim deps/panvimdoc
+deps: deps/plenary.nvim deps/codecompanion.nvim deps/nvim-treesitter deps/mini.nvim deps/panvimdoc
 	@echo Pulling...
 
 deps/plenary.nvim:
 	@mkdir -p deps
 	git clone --filter=blob:none https://github.com/nvim-lua/plenary.nvim.git $@
 
-deps/codecompanion:
+# Get latest codecompanion.nvim every hour (useful while developing)
+deps/codecompanion.nvim:
 	@mkdir -p deps
-	git clone --filter=blob:none https://github.com/olimorris/codecompanion.nvim.git $@
+	@if [ ! -f deps/.codecompanion-timestamp ] || [ $$(find deps/.codecompanion-timestamp -mmin +60 2>/dev/null) ]; then \
+		echo "Updating codecompanion..."; \
+		rm -rf "$@"; \
+		git clone --filter=blob:none https://github.com/olimorris/codecompanion.nvim.git $@; \
+		touch deps/.codecompanion-timestamp; \
+		else \
+		echo "Codecompanion is up to date"; \
+		fi
+
+.PHONY: force-update-codecompanion deps/codecompanion.nvim
+
+force-update-codecompanion:
+	@rm -f deps/.codecompanion-timestamp
+	@make deps/codecompanion.nvim
 
 deps/nvim-treesitter:
 	@mkdir -p deps

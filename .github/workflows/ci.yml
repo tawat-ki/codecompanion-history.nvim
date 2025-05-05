@@ -30,6 +30,7 @@ jobs:
 
       - run: date +%F > todays-date
 
+      #TODO: cache should be based on the codecompanion commit hash
       - name: Restore from todays cache 📂
         uses: actions/cache@v4
         with:

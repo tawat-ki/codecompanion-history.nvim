@@ -31,17 +31,12 @@ end
 ---@param response string The mocked response content
 ---@param status? string The status to set (default: "success")
 ---@return function The original submit function for restoration
-Helpers.mock_submit = function(response, status)
+Helpers.mock_submit = function(response, tools, status)
     local original_submit = require("codecompanion.strategies.chat").submit
 
     require("codecompanion.strategies.chat").submit = function(self)
-        -- Mock submission instead of calling actual API
-        self:add_buf_message({
-            role = "llm",
-            content = response or "This is a mocked response",
-        })
         self.status = status or "success"
-        self:done({ response or "Mocked response" })
+        self:done({ response or "Mocked response" }, tools)
         return true
     end
 
