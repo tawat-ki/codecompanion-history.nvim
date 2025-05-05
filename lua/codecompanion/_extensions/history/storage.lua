@@ -140,7 +140,8 @@ function Storage:_ensure_storage_dirs()
     local index_path = Path:new(self.index_path)
     if not index_path:exists() then
         log:debug("Initializing empty index file: %s", self.index_path)
-        local empty_index = {}
+        -- Initialize with empty object, not array, since we use it as a key-value store
+        local empty_index = vim.empty_dict()
         local result = FileUtils.write_json(self.index_path, empty_index)
         if not result.ok then
             log:error("Failed to initialize index file: %s", result.error)
@@ -216,6 +217,46 @@ function Storage:load_chat(id)
     return result.data --[[@as ChatData]]
 end
 
+---Validate chat object for required fields and structure
+---@param chat table
+---@return boolean, string?
+local function validate_chat_object(chat)
+    if not chat then
+        return false, "chat object is nil"
+    end
+    if type(chat) ~= "table" then
+        return false, "chat must be a table"
+    end
+    if type(chat.opts) ~= "table" then
+        return false, "chat.opts must be a table"
+    end
+    if type(chat.opts.save_id) ~= "string" then
+        return false, "chat.opts.save_id must be a string"
+    end
+    -- Check for path traversal characters in save_id
+    if chat.opts.save_id:match("[/\\]") then
+        return false, "invalid characters in save_id"
+    end
+    -- Validate messages structure if present
+    if chat.messages ~= nil then
+        if type(chat.messages) ~= "table" then
+            return false, "messages must be a table"
+        end
+        for i, msg in ipairs(chat.messages) do
+            if type(msg) ~= "table" then
+                return false, string.format("message %d must be a table", i)
+            end
+            if msg.role ~= nil and type(msg.role) ~= "string" then
+                return false, string.format("message %d role must be a string", i)
+            end
+            if msg.content ~= nil and type(msg.content) ~= "string" then
+                return false, string.format("message %d content must be a string", i)
+            end
+        end
+    end
+    return true
+end
+
 ---Save a chat to storage falling back to the last chat if none is provided
 ---@param chat? Chat
 function Storage:save_chat(chat)
@@ -225,26 +266,28 @@ function Storage:save_chat(chat)
             return
         end
     end
-    local save_id = chat.opts.save_id
-    if not save_id then
-        log:error("Cannot save chat: missing save_id")
+
+    -- Validate chat object structure
+    local valid, err = validate_chat_object(chat)
+    if not valid then
+        log:error("Cannot save chat: %s", err)
         return
     end
 
-    log:debug("Saving chat: %s", save_id)
-    -- Create chat data object
+    log:debug("Saving chat: %s", chat.opts.save_id)
+    -- Create chat data object requiring valid types
     ---@type ChatData
     local chat_data = {
-        save_id = save_id,
+        save_id = chat.opts.save_id,
         title = chat.opts.title,
-        messages = chat.messages,
-        settings = chat.settings,
-        adapter = chat.adapter.name,
+        messages = chat.messages or {},
+        settings = chat.settings or {},
+        adapter = chat.adapter and chat.adapter.name or "unknown",
         updated_at = os.time(),
-        refs = chat.refs,
-        schemas = chat.tools.schemas,
-        in_use = chat.tools.in_use,
-        cycle = chat.cycle,
+        refs = chat.refs or {},
+        schemas = (chat.tools and chat.tools.schemas) or {},
+        in_use = (chat.tools and chat.tools.in_use) or {},
+        cycle = chat.cycle or 1,
     }
 
     -- Save chat to file

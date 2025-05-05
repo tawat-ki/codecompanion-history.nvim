@@ -25,6 +25,9 @@ end
 ---@param chat Chat The chat object containing messages and ID
 ---@param callback fun(title: string|nil) Callback function to receive the generated title
 function TitleGenerator:generate(chat, callback)
+    if not self.opts.auto_generate_title then
+        return
+    end
     -- Early returns for existing title or disabled auto-generation
     if chat.opts.title then
         log:debug("Using existing chat title: %s", chat.opts.title)
@@ -32,8 +35,8 @@ function TitleGenerator:generate(chat, callback)
     end
     callback("Deciding title...")
 
-    -- Return early if no messages
-    if #chat.messages == 0 then
+    -- Return early if no messages or messages is nil
+    if not chat.messages or #chat.messages == 0 then
         log:debug("No messages found in chat, skipping title generation")
         return callback(nil)
     end

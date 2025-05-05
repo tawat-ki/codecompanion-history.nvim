@@ -140,8 +140,39 @@ end
 
 -- Standardized way of dealing with time
 Helpers.is_slow = function()
+    -- Create sample chat data for testing
     return Helpers.is_ci() and (Helpers.is_windows() or Helpers.is_macos())
 end
+
+Helpers.create_test_chat = function(id)
+    return {
+        save_id = id or tostring(os.time()),
+        title = "Test Chat " .. (id or os.time()),
+        messages = {
+            {
+                role = "system",
+                content = "Test system message",
+                opts = { visible = false },
+            },
+            {
+                role = "user",
+                content = "Test user message",
+            },
+            {
+                role = "llm",
+                content = "Test response message",
+            },
+        },
+        settings = { model = "test-model" },
+        adapter = "test_adapter",
+        updated_at = os.time(),
+        refs = {},
+        schemas = {},
+        in_use = {},
+        cycle = 1,
+    }
+end
+
 Helpers.skip_if_slow = function(msg)
     if Helpers.is_slow() then
         MiniTest.skip(msg or "Does not test properly in slow context")
