@@ -180,6 +180,10 @@ function UI:open_saved_chats()
 
     resolved_picker
         :new(items, {
+            on_open = function()
+                log:debug("Opening saved chats picker")
+                self:open_saved_chats()
+            end,
             ---@param chat_data ChatData
             ---@return string[] lines
             on_preview = function(chat_data)
@@ -196,7 +200,6 @@ function UI:open_saved_chats()
             on_delete = function(chat_data)
                 log:debug("Deleting chat: %s", chat_data.save_id)
                 self.storage:delete_chat(chat_data.save_id)
-                self:open_saved_chats()
             end,
             ---@param chat_data ChatData
             on_select = function(chat_data)

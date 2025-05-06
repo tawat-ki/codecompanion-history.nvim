@@ -54,8 +54,9 @@
 
 ---@class UIHandlers
 ---@field on_preview fun(chat_data: ChatData): string[]
----@field on_delete fun(chat_data: ChatData)
----@field on_select fun(chat_data: ChatData)
+---@field on_delete fun(chat_data: ChatData):nil
+---@field on_select fun(chat_data: ChatData):nil
+---@field on_open fun():nil
 
 ---@class BufferInfo
 ---@field bufnr number

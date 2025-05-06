@@ -44,27 +44,55 @@ function TelescopePicker:browse(current_save_id)
                 end,
             }),
             attach_mappings = function(prompt_bufnr)
-                local action_state = require("telescope.actions.state")
                 local actions = require("telescope.actions")
-                local delete_item = function()
-                    local selection = action_state.get_selected_entry()
-                    actions.close(prompt_bufnr)
-                    if selection then
-                        self.handlers.on_delete(selection)
+                local action_state = require("telescope.actions.state")
+
+                local delete_selections = function()
+                    local picker = action_state.get_current_picker(prompt_bufnr)
+                    local selections = picker:get_multi_selection()
+
+                    if #selections == 0 then
+                        -- If no multi-selection, use current selection
+                        local selection = action_state.get_selected_entry()
+                        if selection then
+                            selections = { selection }
+                        end
                     end
+
+                    actions.close(prompt_bufnr)
+
+                    -- Confirm deletion if multiple items selected
+                    if #selections > 1 then
+                        local confirm = vim.fn.confirm(
+                            "Are you sure you want to delete " .. #selections .. " items? (y/n)",
+                            "&Yes\n&No"
+                        )
+                        if confirm ~= 1 then
+                            return
+                        end
+                    end
+                    -- Delete all selected items
+                    for _, selection in ipairs(selections) do
+                        self.handlers.on_delete(selection.value)
+                    end
+                    self.handlers.on_open()
                 end
-                vim.keymap.set({ "n" }, "d", delete_item, {
+
+                -- Multi-select toggle with <Tab>
+                actions.select_default:replace(function()
+                    local selection = action_state.get_selected_entry()
+                    if selection then
+                        actions.close(prompt_bufnr)
+                        self.handlers.on_select(selection.value)
+                    end
+                end)
+
+                vim.keymap.set({ "i", "n" }, "d", delete_selections, {
                     buffer = prompt_bufnr,
                     silent = true,
                     nowait = true,
                 })
-                actions.select_default:replace(function()
-                    local selection = action_state.get_selected_entry()
-                    actions.close(prompt_bufnr)
-                    if selection then
-                        self.handlers.on_select(selection.value)
-                    end
-                end)
+
                 return true
             end,
         })
