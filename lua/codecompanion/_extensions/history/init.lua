@@ -110,15 +110,17 @@ function History:_setup_autocommands()
     })
 
     vim.api.nvim_create_autocmd("User", {
-        pattern = "CodeCompanionRequestFinished",
+        pattern = "CodeCompanion*Finished",
         group = group,
         callback = vim.schedule_wrap(function(opts)
-            log:trace("Chat RequestFinished event received")
-            local chat_module = require("codecompanion.strategies.chat")
-            local bufnr = opts.data.bufnr
-            local chat = chat_module.buf_get_chat(bufnr)
-            if chat then
-                self.storage:save_chat(chat)
+            if opts.match == "CodeCompanionRequestFinished" or opts.match == "CodeCompanionAgentFinished" then
+                log:trace("Chat RequestFinished event received")
+                local chat_module = require("codecompanion.strategies.chat")
+                local bufnr = opts.data.bufnr
+                local chat = chat_module.buf_get_chat(bufnr)
+                if chat then
+                    self.storage:save_chat(chat)
+                end
             end
         end),
     })
