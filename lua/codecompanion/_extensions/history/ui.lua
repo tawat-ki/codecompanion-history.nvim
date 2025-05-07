@@ -6,7 +6,7 @@ local utils = require("codecompanion._extensions.history.utils")
 ---@field storage Storage
 ---@field title_generator TitleGenerator
 ---@field default_buf_title string
----@field picker "telescope"|"default"
+---@field picker "telescope"|"snacks"|"default"
 local UI = {}
 
 ---@param opts HistoryOpts
