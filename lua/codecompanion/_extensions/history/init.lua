@@ -70,17 +70,17 @@ function History:_setup_autocommands()
             --   from_prompt_library = false,
             --   id = 7463137
             -- },
-            log:debug("Chat created event received")
+            log:trace("Chat created event received")
             local chat_module = require("codecompanion.strategies.chat")
             local bufnr = opts.data.bufnr
             local chat = chat_module.buf_get_chat(bufnr)
 
             if self.should_load_last_chat then
-                log:debug("Attempting to load last chat")
+                log:trace("Attempting to load last chat")
                 self.should_load_last_chat = false
                 local last_saved_chat = self.storage:get_last_chat()
                 if last_saved_chat then
-                    log:debug("Restoring last saved chat")
+                    log:trace("Restoring last saved chat")
                     chat:close()
                     self.ui:create_chat(last_saved_chat)
                     return
@@ -138,7 +138,7 @@ function History:_setup_autocommands()
                 log:debug("Attempting to generate title for chat: %s", chat.opts.save_id)
                 self.title_generator:generate(chat, function(generated_title)
                     if generated_title and generated_title ~= "" then
-                        log:debug("Setting generated title: %s", generated_title)
+                        log:trace("Setting generated title: %s", generated_title)
                         self.ui:_set_buf_title(chat.bufnr, generated_title)
                         if generated_title == "Deciding title..." then
                             return
@@ -148,7 +148,7 @@ function History:_setup_autocommands()
                         self.storage:save_chat(chat)
                     else
                         local title = self:_get_title(chat)
-                        log:debug("Using default title: %s", title)
+                        log:trace("Using default title: %s", title)
                         self.ui:_set_buf_title(chat.bufnr, title)
                     end
                 end)
@@ -161,7 +161,7 @@ function History:_setup_autocommands()
         pattern = "CodeCompanionChatCleared",
         group = group,
         callback = vim.schedule_wrap(function(opts)
-            log:debug("Chat cleared event received")
+            log:trace("Chat cleared event received")
 
             local chat_module = require("codecompanion.strategies.chat")
             local bufnr = opts.data.bufnr
@@ -170,13 +170,13 @@ function History:_setup_autocommands()
                 return
             end
             if self.opts.delete_on_clearing_chat then
-                log:debug("Deleting cleared chat from storage: %s", chat.opts.save_id)
+                log:trace("Deleting cleared chat from storage: %s", chat.opts.save_id)
                 self.storage:delete_chat(chat.opts.save_id)
             end
 
-            log:debug("Current title: %s", chat.opts.title)
+            log:trace("Current title: %s", chat.opts.title)
             local title = self:_get_title(chat)
-            log:debug("Resetting chat title: %s", title)
+            log:trace("Resetting chat title: %s", title)
             self.ui:_set_buf_title(chat.bufnr, title)
 
             -- Reset chat state
@@ -229,7 +229,7 @@ return {
             opts = vim.tbl_deep_extend("force", default_opts, opts or {})
             log.setup_logging(opts.enable_logging)
             history_instance = History.new(opts)
-            log:info("History extension setup successfully")
+            log:debug("History extension setup successfully")
         end
     end,
     exports = {

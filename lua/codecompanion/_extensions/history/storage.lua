@@ -16,7 +16,7 @@ function FileUtils.read_json(file_path)
     local path = Path:new(file_path)
 
     if not path:exists() then
-        log:debug("File does not exist: %s", file_path)
+        log:trace("File does not exist: %s", file_path)
         return { ok = false, data = nil, error = "File does not exist: " .. file_path }
     end
 
@@ -46,7 +46,7 @@ function FileUtils.write_json(file_path, data)
     -- Ensure parent directory exists
     local parent = path:parent()
     if not parent:exists() then
-        log:debug("Creating parent directory: %s", parent:absolute())
+        log:trace("Creating parent directory: %s", parent:absolute())
         parent:mkdir({ parents = true })
     end
 
@@ -81,7 +81,7 @@ function FileUtils.delete_file(file_path)
     local path = Path:new(file_path)
 
     if not path:exists() then
-        log:debug("File to delete does not exist: %s", file_path)
+        log:trace("File to delete does not exist: %s", file_path)
         return { ok = true, error = nil }
     end
 
@@ -89,11 +89,11 @@ function FileUtils.delete_file(file_path)
         return path:rm()
     end)
     if not success then
-        log:error("Failed to delete file: %s - %s", file_path, err or "unknown error")
+        log:trace("Failed to delete file: %s - %s", file_path, err or "unknown error")
         return { ok = false, error = "Failed to delete file: " .. (err or "unknown error") }
     end
 
-    log:debug("Successfully deleted file: %s", file_path)
+    log:trace("Successfully deleted file: %s", file_path)
     return { ok = true, error = nil }
 end
 
@@ -106,7 +106,7 @@ function Storage.new(opts)
     self.base_path = opts.dir_to_save:gsub("/+$", "")
     self.index_path = self.base_path .. "/index.json"
     self.chats_dir = self.base_path .. "/chats"
-    log:debug("Initializing storage with base path: %s", self.base_path)
+    log:trace("Initializing storage with base path: %s", self.base_path)
     -- Ensure storage directories exist
     self:_ensure_storage_dirs()
 
@@ -125,21 +125,21 @@ function Storage:_ensure_storage_dirs()
     -- Create base directory
     local base_dir = Path:new(self.base_path)
     if not base_dir:exists() then
-        log:debug("Creating base directory: %s", self.base_path)
+        log:trace("Creating base directory: %s", self.base_path)
         base_dir:mkdir({ parents = true })
     end
 
     -- Create chats directory
     local chats_dir = Path:new(self.chats_dir)
     if not chats_dir:exists() then
-        log:debug("Creating chats directory: %s", self.chats_dir)
+        log:trace("Creating chats directory: %s", self.chats_dir)
         chats_dir:mkdir({ parents = true })
     end
 
     -- Initialize index file if it doesn't exist
     local index_path = Path:new(self.index_path)
     if not index_path:exists() then
-        log:debug("Initializing empty index file: %s", self.index_path)
+        log:trace("Initializing empty index file: %s", self.index_path)
         -- Initialize with empty object, not array, since we use it as a key-value store
         local empty_index = vim.empty_dict()
         local result = FileUtils.write_json(self.index_path, empty_index)
@@ -153,14 +153,14 @@ end
 ---@return {ok: boolean, error: string|nil}
 function Storage:_save_chat_to_file(chat_data)
     local chat_path = self.chats_dir .. "/" .. chat_data.save_id .. ".json"
-    log:debug("Saving chat to file: %s", chat_path)
+    log:trace("Saving chat to file: %s", chat_path)
     return FileUtils.write_json(chat_path, chat_data)
 end
 
 ---@param chat_data ChatData
 ---@return {ok: boolean, error: string|nil}
 function Storage:_update_index_entry(chat_data)
-    log:debug("Updating index entry for chat: %s", chat_data.save_id)
+    log:trace("Updating index entry for chat: %s", chat_data.save_id)
     -- Read current index
     local index_result = FileUtils.read_json(self.index_path)
     if not index_result.ok then
@@ -184,11 +184,11 @@ end
 ---Load all chats from storage (index only)
 ---@return table<string, ChatIndexData>
 function Storage:get_chats()
-    log:debug("Loading chat index")
+    log:trace("Loading chat index")
     local result = FileUtils.read_json(self.index_path)
     if not result.ok then
         if result.error:match("does not exist") then
-            log:debug("Index file does not exist, initializing storage")
+            log:trace("Index file does not exist, initializing storage")
             self:_ensure_storage_dirs()
             return {}
         else
@@ -204,7 +204,7 @@ end
 ---@return ChatData|nil
 function Storage:load_chat(id)
     local chat_path = self.chats_dir .. "/" .. id .. ".json"
-    log:debug("Loading chat from: %s", chat_path)
+    log:trace("Loading chat from: %s", chat_path)
     local result = FileUtils.read_json(chat_path)
 
     if not result.ok then
@@ -274,7 +274,7 @@ function Storage:save_chat(chat)
         return
     end
 
-    log:debug("Saving chat: %s", chat.opts.save_id)
+    log:trace("Saving chat: %s", chat.opts.save_id)
     -- Create chat data object requiring valid types
     ---@type ChatData
     local chat_data = {
@@ -365,7 +365,7 @@ function Storage:get_last_chat()
 
     -- If we found a recent chat, load and return it
     if most_recent then
-        log:debug("Found most recent chat: %s", most_recent)
+        log:trace("Found most recent chat: %s", most_recent)
         return self:load_chat(most_recent)
     end
 

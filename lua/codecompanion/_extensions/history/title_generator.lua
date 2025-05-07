@@ -30,14 +30,14 @@ function TitleGenerator:generate(chat, callback)
     end
     -- Early returns for existing title or disabled auto-generation
     if chat.opts.title then
-        log:debug("Using existing chat title: %s", chat.opts.title)
+        log:trace("Using existing chat title: %s", chat.opts.title)
         return callback(chat.opts.title)
     end
     callback("Deciding title...")
 
     -- Return early if no messages or messages is nil
     if not chat.messages or #chat.messages == 0 then
-        log:debug("No messages found in chat, skipping title generation")
+        log:trace("No messages found in chat, skipping title generation")
         return callback(nil)
     end
 
@@ -51,7 +51,7 @@ function TitleGenerator:generate(chat, callback)
 
     local first_user_msg = non_tag_messages[1] or user_messages[1]
     if not first_user_msg then
-        log:debug("No user message found in chat, skipping title generation")
+        log:trace("No user message found in chat, skipping title generation")
         return callback(nil)
     end
 
@@ -64,7 +64,7 @@ function TitleGenerator:generate(chat, callback)
     if #content > 1000 then
         truncated_content = truncated_content .. "..."
     end
-    log:debug("Generating title for chat with save_id: %s", chat.opts.save_id or "N/A")
+    log:trace("Generating title for chat with save_id: %s", chat.opts.save_id or "N/A")
     -- Create prompt for title generation
     local prompt = string.format(
         [[Generate a very short and concise title (max 5 words) for this chat based on the following user query:
@@ -89,7 +89,7 @@ end
 ---@param prompt string
 ---@param callback fun(title: string|nil)
 function TitleGenerator:_make_adapter_request(chat, prompt, callback)
-    log:debug("Making adapter request for title generation")
+    log:trace("Making adapter request for title generation")
     local settings = chat.adapter:map_schema_to_params(chat.settings)
     settings.opts.stream = false
     local payload = {
@@ -109,7 +109,7 @@ function TitleGenerator:_make_adapter_request(chat, prompt, callback)
                 if result and result.status then
                     if result.status == CONSTANTS.STATUS_SUCCESS then
                         local title = vim.trim(result.output.content)
-                        log:debug("Successfully generated title: %s", title)
+                        log:trace("Successfully generated title: %s", title)
                         return callback(title)
                     elseif result.status == CONSTANTS.STATUS_ERROR then
                         log:error("Title generation error: %s", result.output)
