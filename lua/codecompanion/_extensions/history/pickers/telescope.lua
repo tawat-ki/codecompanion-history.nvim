@@ -87,7 +87,7 @@ function TelescopePicker:browse(current_save_id)
                     end
                 end)
 
-                vim.keymap.set({ "i", "n" }, "d", delete_selections, {
+                vim.keymap.set({ "n" }, "d", delete_selections, {
                     buffer = prompt_bufnr,
                     silent = true,
                     nowait = true,
