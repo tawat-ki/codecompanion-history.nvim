@@ -16,7 +16,7 @@ A history management extension for [codecompanion.nvim](https://codecompanion.ol
 ## ✨ Features
 
 - 💾 Automatic chat session saving with context preservation
-- 🎯 Smart title generation for chats 
+- 🎯 Smart title generation for chats
 - 🔄 Continue from where you left
 - 📚 Browse saved chats with preview
 - 🔍 Multiple picker interfaces
@@ -52,6 +52,7 @@ When restoring a chat:
 
 - Neovim >= 0.8.0
 - [codecompanion.nvim](https://codecompanion.olimorris.dev/)
+- [snacks.nvim](https://github.com/folke/snacks.nvim) (optional, for enhanced picker)
 - [telescope.nvim](https://github.com/nvim-telescope/telescope.nvim) (optional, for enhanced picker)
 
 ## 📦 Installation
@@ -86,7 +87,7 @@ require("codecompanion").setup({
                 continue_last_chat = false,
                 ---When chat is cleared with `gx` delete the chat from history
                 delete_on_clearing_chat = false,
-                -- Picker interface ("telescope" or "default")
+                -- Picker interface ("telescope", "snacks" or "default")
                 picker = "telescope",
                 ---Enable detailed logging for history extension
                 enable_logging = false,
@@ -98,7 +99,7 @@ require("codecompanion").setup({
 })
 ```
 
-## 🛠️ Usage 
+## 🛠️ Usage
 
 #### 🎯 Commands
 
@@ -112,7 +113,7 @@ require("codecompanion").setup({
 
 The history browser shows all your saved chats with:
 - Title (auto-generated or custom)
-- Last updated time  
+- Last updated time
 - Preview of chat contents
 
 Actions in history browser:
@@ -205,7 +206,7 @@ Here's what's happening in simple terms:
 
 2. As you chat:
    - When you submit a message, we listen to `CodeCompanionChatSubmitted` event and save state
-   - Every time you get a response, our extension automatically saves everything 
+   - Every time you get a response, our extension automatically saves everything
    - If your chat doesn't have a title yet, it tries to create one that makes sense
    - All your messages, tools, and references are safely stored
 
@@ -233,7 +234,7 @@ The extension integrates with CodeCompanion through a robust event-driven archit
      - Generate unique save_id (Unix timestamp)
      - Initialize chat subscribers for auto-saving
      - Set initial buffer title with sparkle icon (✨)
-   
+
    - Monitors `CodeCompanionChatSubmitted` events to:
      - Persist complete chat state including messages, tools, schemas, and references
      - Trigger title generation if enabled and title is empty
@@ -254,7 +255,7 @@ The extension integrates with CodeCompanion through a robust event-driven archit
      - Custom settings
 
 5. **UI Components**:
-   - Implements multiple picker interfaces (telescope/default)
+   - Implements multiple picker interfaces (telescope/snacks/default)
    - Provides real-time preview generation with markdown formatting
    - Supports justified text layout for buffer titles
    - Handles window/buffer lifecycle management
@@ -274,7 +275,7 @@ The extension integrates with CodeCompanion through a robust event-driven archit
 ## 🔌 Related Extensions
 
 - [MCP Hub](https://codecompanion.olimorris.dev/extensions/mcphub.html) extension
-- [VectorCode](https://codecompanion.olimorris.dev/extensions/vectorcode.html) extension 
+- [VectorCode](https://codecompanion.olimorris.dev/extensions/vectorcode.html) extension
 
 ## 🙏 Acknowledgements
 
