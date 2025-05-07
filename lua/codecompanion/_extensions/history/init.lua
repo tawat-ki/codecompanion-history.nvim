@@ -105,9 +105,24 @@ function History:_setup_autocommands()
                 log:trace("Generated new save_id: %s", chat.opts.save_id)
             end
 
-            self:_subscribe_to_chat(chat)
+            -- self:_subscribe_to_chat(chat)
         end),
     })
+
+    vim.api.nvim_create_autocmd("User", {
+        pattern = "CodeCompanionRequestFinished",
+        group = group,
+        callback = vim.schedule_wrap(function(opts)
+            log:trace("Chat RequestFinished event received")
+            local chat_module = require("codecompanion.strategies.chat")
+            local bufnr = opts.data.bufnr
+            local chat = chat_module.buf_get_chat(bufnr)
+            if chat then
+                self.storage:save_chat(chat)
+            end
+        end),
+    })
+
     vim.api.nvim_create_autocmd("User", {
         pattern = "CodeCompanionChatSubmitted",
         group = group,
@@ -116,6 +131,9 @@ function History:_setup_autocommands()
             local chat_module = require("codecompanion.strategies.chat")
             local bufnr = opts.data.bufnr
             local chat = chat_module.buf_get_chat(bufnr)
+            if not chat then
+                return
+            end
             if self.opts.auto_generate_title and not chat.opts.title then
                 log:debug("Attempting to generate title for chat: %s", chat.opts.save_id)
                 self.title_generator:generate(chat, function(generated_title)
@@ -148,7 +166,9 @@ function History:_setup_autocommands()
             local chat_module = require("codecompanion.strategies.chat")
             local bufnr = opts.data.bufnr
             local chat = chat_module.buf_get_chat(bufnr)
-
+            if not chat then
+                return
+            end
             if self.opts.delete_on_clearing_chat then
                 log:debug("Deleting cleared chat from storage: %s", chat.opts.save_id)
                 self.storage:delete_chat(chat.opts.save_id)
@@ -186,19 +206,19 @@ function History:_setup_keymaps()
     }
 end
 
----@param chat Chat
-function History:_subscribe_to_chat(chat)
-    -- Add subscription to save chat on every response from llm
-    chat.subscribers:subscribe({
-        --INFO:data field is needed
-        data = {
-            name = "save_messages_and_generate_title",
-        },
-        callback = function(chat_instance)
-            self.storage:save_chat(chat_instance)
-        end,
-    })
-end
+-- ---@param chat Chat
+-- function History:_subscribe_to_chat(chat)
+--     -- Add subscription to save chat on every response from llm
+--     chat.subscribers:subscribe({
+--         --INFO:data field is needed
+--         data = {
+--             name = "save_messages_and_generate_title",
+--         },
+--         callback = function(chat_instance)
+--             self.storage:save_chat(chat_instance)
+--         end,
+--     })
+-- end
 
 ---@type CodeCompanion.Extension
 return {
