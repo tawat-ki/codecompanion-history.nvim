@@ -20,6 +20,8 @@ function SnacksPicker:browse(current_save_id)
         end,
         transform = function(item)
             item.file = item.save_id
+            item.text = item.name or "Untitled"
+            return item
         end,
         preview = function(ctx)
             local item = ctx.item
