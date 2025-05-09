@@ -12,6 +12,8 @@
 ---@field keymap? string Keymap to open saved chats from the chat buffer
 ---@field picker? Pickers Picker to use (telescope, etc.)
 ---@field enable_logging? boolean Enable logging for history extension
+---@field auto_save? boolean Automatically save the chat whenever it is updated
+---@field save_chat_keymap? string Keymap to save the current chat
 
 ---@class Chat
 ---@field opts {title:string, save_id: string}

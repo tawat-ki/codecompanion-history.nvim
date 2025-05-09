@@ -19,13 +19,17 @@ local default_opts = {
     continue_last_chat = false,
     ---When chat is cleared with `gx` delete the chat from history
     delete_on_clearing_chat = false,
-    keymap = "gh",
     ---@type Pickers
     picker = "telescope",
+    keymap = "gh",
     ---Enable detailed logging for history extension
     enable_logging = false,
     ---Directory path to save the chats
     dir_to_save = vim.fn.stdpath("data") .. "/codecompanion-history",
+    ---Save all chats by default
+    auto_save = true,
+    ---Keymap to save the current chat
+    save_chat_keymap = "sc",
 }
 
 ---@type History|nil
@@ -108,11 +112,13 @@ function History:_setup_autocommands()
             -- self:_subscribe_to_chat(chat)
         end),
     })
-
     vim.api.nvim_create_autocmd("User", {
         pattern = "CodeCompanion*Finished",
         group = group,
         callback = vim.schedule_wrap(function(opts)
+            if not self.opts.auto_save then
+                return
+            end
             if opts.match == "CodeCompanionRequestFinished" or opts.match == "CodeCompanionAgentFinished" then
                 log:trace("Chat %s event received for %s", opts.match, opts.data.strategy)
                 if opts.match == "CodeCompanionRequestFinished" and opts.data.strategy ~= "chat" then
@@ -153,7 +159,9 @@ function History:_setup_autocommands()
                         end
                         chat.opts.title = generated_title
                         --save the title to history
-                        self.storage:save_chat(chat)
+                        if self.opts.auto_save then
+                            self.storage:save_chat(chat)
+                        end
                     else
                         local title = self:_get_title(chat)
                         log:trace("Using default title: %s", title)
@@ -161,7 +169,9 @@ function History:_setup_autocommands()
                     end
                 end)
             end
-            self.storage:save_chat(chat)
+            if self.opts.auto_save then
+                self.storage:save_chat(chat)
+            end
         end),
     })
 
@@ -210,6 +220,19 @@ function History:_setup_keymaps()
         description = "Browse Saved Chats",
         callback = function(_)
             self.ui:open_saved_chats()
+        end,
+    }
+    require("codecompanion.config").strategies.chat.keymaps["Save Current Chat"] = {
+        modes = {
+            n = self.opts.save_chat_keymap,
+        },
+        description = "Save current chat",
+        callback = function(chat)
+            if not chat then
+                return
+            end
+            self.storage:save_chat(chat)
+            log:debug("Saved current chat")
         end,
     }
 end

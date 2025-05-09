@@ -15,7 +15,9 @@ A history management extension for [codecompanion.nvim](https://codecompanion.ol
 
 ## ✨ Features
 
-- 💾 Automatic chat session saving with context preservation
+- 💾 Flexible chat saving:
+  - Automatic session saving (can be disabled)
+  - Manual save with dedicated keymap
 - 🎯 Smart title generation for chats
 - 🔄 Continue from where you left
 - 📚 Browse saved chats with preview
@@ -93,6 +95,10 @@ require("codecompanion").setup({
                 enable_logging = false,
                 ---Directory path to save the chats
                 dir_to_save = vim.fn.stdpath("data") .. "/codecompanion-history",
+                -- Save all chats by default
+                auto_save = true,
+                -- Keymap to save the current chat manually
+                save_chat_keymap = "sc",
             }
         }
     }
@@ -108,6 +114,7 @@ require("codecompanion").setup({
 #### ⌨️ Chat Buffer Keymaps
 
 - `gh` - Open history browser (customizable via `opts.keymap`)
+- `sc` - Save current chat manually (customizable via `opts.save_chat_keymap`)
 
 #### 📚 History Browser
 
@@ -177,7 +184,10 @@ graph TD
         F --> G[Prepare Auto-Title];
 
         C -- Extension Hooks --> H[Subscriber Triggered];
-        H --> I[Auto-Save Chat State - Messages, Tools, Refs];
+        H --> H1{Auto-Save Enabled?};
+        H1 -- Yes --> I[Save Chat State - Messages, Tools, Refs];
+        H1 -- No --> H2[Manual Save via `sc`];
+        H2 --> I;
         I --> J{No Title & Auto-Title Enabled?};
         J -- Yes --> K[Generate Title];
         K --> L[Update Buffer Title];
@@ -205,8 +215,10 @@ Here's what's happening in simple terms:
    - A title generator that will name your chat based on the conversation
 
 2. As you chat:
-   - When you submit a message, we listen to `CodeCompanionChatSubmitted` event and save state
-   - Every time you get a response, our extension automatically saves everything
+   - When auto-save is enabled (default):
+     - Each submitted message triggers automatic saving
+     - Every LLM response automatically saves the chat state
+   - Manual saving is available via the `sc` keymap
    - If your chat doesn't have a title yet, it tries to create one that makes sense
    - All your messages, tools, and references are safely stored
 
@@ -284,6 +296,11 @@ Special thanks to [Oli Morris](https://github.com/olimorris) for creating the am
 ## 📄 License
 
 MIT
+
+
+
+
+
 
 
 
