@@ -86,4 +86,17 @@ function M.get_editor_info()
         buffers = valid_buffers,
     }
 end
+
+function M.remove_functions(obj)
+    if type(obj) ~= "table" then
+        return obj
+    end
+    local new_obj = {}
+    for k, v in pairs(obj) do
+        if type(v) ~= "function" then
+            new_obj[k] = M.remove_functions(v)
+        end
+    end
+    return new_obj
+end
 return M

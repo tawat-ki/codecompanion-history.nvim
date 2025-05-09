@@ -7,6 +7,7 @@ local Storage = {}
 -- File I/O utility functions
 local FileUtils = {}
 local log = require("codecompanion._extensions.history.log")
+local utils = require("codecompanion._extensions.history.utils")
 
 ---Read and decode a JSON file
 ---@param file_path string Path to the file
@@ -291,7 +292,7 @@ function Storage:save_chat(chat)
     }
 
     -- Save chat to file
-    local save_result = self:_save_chat_to_file(chat_data)
+    local save_result = self:_save_chat_to_file(utils.remove_functions(chat_data))
     if not save_result.ok then
         log:error("Failed to save chat: %s", save_result.error)
         return
@@ -371,4 +372,5 @@ function Storage:get_last_chat()
 
     return nil
 end
+
 return Storage

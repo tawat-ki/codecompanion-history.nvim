@@ -108,7 +108,7 @@ function TitleGenerator:_make_adapter_request(chat, prompt, callback)
                 local result = chat.adapter.handlers.chat_output(adapter, data)
                 if result and result.status then
                     if result.status == CONSTANTS.STATUS_SUCCESS then
-                        local title = vim.trim(result.output.content)
+                        local title = vim.trim(result.output.content or "")
                         log:trace("Successfully generated title: %s", title)
                         return callback(title)
                     elseif result.status == CONSTANTS.STATUS_ERROR then
