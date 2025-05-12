@@ -2,6 +2,7 @@
 ---@field base_path string Base directory path
 ---@field index_path string Path to index file
 ---@field chats_dir string Path to chats directory
+---@field expiration_days number Number of days after which chats are deleted
 local Storage = {}
 
 -- File I/O utility functions
@@ -98,7 +99,6 @@ function FileUtils.delete_file(file_path)
     return { ok = true, error = nil }
 end
 
----@return Storage
 function Storage.new(opts)
     local self = setmetatable({}, {
         __index = Storage,
@@ -107,11 +107,46 @@ function Storage.new(opts)
     self.base_path = opts.dir_to_save:gsub("/+$", "")
     self.index_path = self.base_path .. "/index.json"
     self.chats_dir = self.base_path .. "/chats"
-    log:trace("Initializing storage with base path: %s", self.base_path)
+    self.expiration_days = opts.expiration_days or 0
+    log:trace("Initializing storage with base path: %s, expiration: %d days", self.base_path, self.expiration_days)
     -- Ensure storage directories exist
     self:_ensure_storage_dirs()
+    -- Clean expired chats on startup
+    self:clean_expired_chats()
 
     return self --[[@as Storage]]
+end
+
+---Clean expired chats based on expiration_days setting
+---@private
+function Storage:clean_expired_chats()
+    -- Skip if expiration is disabled
+    if self.expiration_days <= 0 then
+        log:trace("Chat expiration disabled, skipping cleanup")
+        return
+    end
+
+    log:trace("Checking for expired chats (older than %d days)", self.expiration_days)
+    local index = self:get_chats()
+    local now = os.time()
+    local expired_count = 0
+
+    -- Calculate expiration threshold in seconds
+    local expiration_threshold = now - (self.expiration_days * 24 * 60 * 60)
+
+    -- Check each chat
+    for id, chat_meta in pairs(index) do
+        if chat_meta.updated_at and chat_meta.updated_at < expiration_threshold then
+            log:trace("Deleting expired chat: %s (last updated: %s)", id, os.date("%Y-%m-%d", chat_meta.updated_at))
+            if self:delete_chat(id) then
+                expired_count = expired_count + 1
+            end
+        end
+    end
+
+    if expired_count > 0 then
+        log:debug("Cleaned up %d expired chats", expired_count)
+    end
 end
 
 ---Get the base path of the storage
@@ -171,11 +206,23 @@ function Storage:_update_index_entry(chat_data)
     -- Ensure we have a table to work with
     local index = index_result.data or {}
 
-    -- Update index with minimal metadata
+    -- Calculate message count and token estimate
+    local message_count = #(chat_data.messages or {})
+    local total_chars = 0
+    for _, msg in ipairs(chat_data.messages or {}) do
+        total_chars = total_chars + #(msg.content or "")
+    end
+    local token_estimate = math.floor(total_chars / 4)
+
+    -- Update index with enhanced metadata
     index[chat_data.save_id] = {
         save_id = chat_data.save_id,
         title = chat_data.title,
         updated_at = chat_data.updated_at,
+        model = chat_data.settings and chat_data.settings.model or "unknown",
+        adapter = chat_data.adapter or "unknown",
+        message_count = message_count,
+        token_estimate = token_estimate,
     }
 
     -- Write updated index
@@ -197,6 +244,7 @@ function Storage:get_chats()
             return {}
         end
     end
+
     return result.data or {}
 end
 
@@ -371,6 +419,44 @@ function Storage:get_last_chat()
     end
 
     return nil
+end
+
+---Rename a chat in storage
+---@param save_id string The chat ID to rename
+---@param new_title string The new title for the chat
+---@return boolean success
+function Storage:rename_chat(save_id, new_title)
+    log:trace("Renaming chat %s to: %s", save_id, new_title)
+    local index = self:get_chats()
+    if not index[save_id] then
+        log:error("Chat %s not found in index", save_id)
+        return false
+    end
+
+    -- Update index
+    index[save_id].title = new_title
+    index[save_id].updated_at = os.time()
+    local result = FileUtils.write_json(self.index_path, index)
+    if not result.ok then
+        log:error("Failed to update index with new title: %s", result.error)
+        return false
+    end
+
+    -- Update chat data
+    local chat_path = self.chats_dir .. "/" .. save_id .. ".json"
+    local chat_result = FileUtils.read_json(chat_path)
+    if chat_result.ok then
+        chat_result.data.title = new_title
+        chat_result.data.updated_at = os.time()
+        result = FileUtils.write_json(chat_path, chat_result.data)
+        if not result.ok then
+            log:error("Failed to update chat file with new title: %s", result.error)
+            return false
+        end
+    end
+
+    log:debug("Successfully renamed chat %s to: %s", save_id, new_title)
+    return true
 end
 
 return Storage

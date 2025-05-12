@@ -15,18 +15,16 @@ function TelescopePicker:browse(current_save_id)
             finder = require("telescope.finders").new_table({
                 results = self.chats,
                 entry_maker = function(entry)
-                    local is_current = current_save_id and current_save_id == entry.save_id
-                    local relative_time = utils.format_relative_time(entry.updated_at)
                     local display_title =
-                        string.format("%s %s (%s)", is_current and "🌟" or " ", entry.name, relative_time)
+                        self:format_entry(entry, (current_save_id and current_save_id) == entry.save_id)
 
                     return vim.tbl_extend("keep", {
                         value = entry,
                         display = display_title,
-                        ordinal = entry.name,
-                        name = entry.name,
+                        ordinal = entry.title or "",
+                        name = entry.title,
                         save_id = entry.save_id,
-                        title = entry.name,
+                        title = entry.title,
                         messages = entry.messages,
                     }, entry)
                 end,
@@ -77,6 +75,25 @@ function TelescopePicker:browse(current_save_id)
                     end
                     self.handlers.on_open()
                 end
+                -- Function to handle renaming
+                local rename_selection = function()
+                    local selection = action_state.get_selected_entry()
+                    if not selection then
+                        return
+                    end
+                    actions.close(prompt_bufnr)
+
+                    -- Prompt for new title
+                    vim.ui.input({
+                        prompt = "New title: ",
+                        default = selection.value.title or "",
+                    }, function(new_title)
+                        if new_title and vim.trim(new_title) ~= "" then
+                            self.handlers.on_rename(selection.value, new_title)
+                            self.handlers.on_open()
+                        end
+                    end)
+                end
 
                 -- Multi-select toggle with <Tab>
                 actions.select_default:replace(function()
@@ -86,8 +103,26 @@ function TelescopePicker:browse(current_save_id)
                         self.handlers.on_select(selection.value)
                     end
                 end)
+                -- Delete chats
+                -- Delete chats (normal mode and <M-d> in insert mode)
+                vim.keymap.set({ "n" }, self.keymaps.delete.n, delete_selections, {
+                    buffer = prompt_bufnr,
+                    silent = true,
+                    nowait = true,
+                })
+                vim.keymap.set({ "i" }, self.keymaps.delete.i, delete_selections, {
+                    buffer = prompt_bufnr,
+                    silent = true,
+                    nowait = true,
+                })
 
-                vim.keymap.set({ "n" }, "d", delete_selections, {
+                -- Rename chat (normal mode and <C-r> in insert mode)
+                vim.keymap.set({ "n" }, self.keymaps.rename.n, rename_selection, {
+                    buffer = prompt_bufnr,
+                    silent = true,
+                    nowait = true,
+                })
+                vim.keymap.set({ "i" }, self.keymaps.rename.i, rename_selection, {
                     buffer = prompt_bufnr,
                     silent = true,
                     nowait = true,

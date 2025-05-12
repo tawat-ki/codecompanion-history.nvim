@@ -14,9 +14,7 @@ function SnacksPicker:browse(current_save_id)
         items = self.chats,
         main = { file = false, float = true },
         format = function(item)
-            local is_current = current_save_id and current_save_id == item.save_id
-            local relative_time = utils.format_relative_time(item.updated_at)
-            return { { string.format("%s %s (%s)", is_current and "🌟" or " ", item.name, relative_time) } }
+            return { { self:format_entry(item, (current_save_id and current_save_id) == item.save_id) } }
         end,
         transform = function(item)
             item.file = item.save_id
@@ -44,6 +42,25 @@ function SnacksPicker:browse(current_save_id)
             picker:close()
         end,
         actions = {
+            rename_chat = function(picker)
+                local selections = picker:selected({ fallback = true })
+                if #selections ~= 1 then
+                    return vim.notify("Can rename only one chat at a time", vim.log.levels.WARN)
+                end
+                local selection = selections[1]
+                picker:close()
+
+                -- Prompt for new title
+                vim.ui.input({
+                    prompt = "New title: ",
+                    default = selection.title or "",
+                }, function(new_title)
+                    if new_title and vim.trim(new_title) ~= "" then
+                        self.handlers.on_rename(selection, new_title)
+                        self.handlers.on_open()
+                    end
+                end)
+            end,
             delete_chat = function(picker)
                 local selections = picker:selected({ fallback = true })
                 if #selections == 0 then
@@ -72,12 +89,18 @@ function SnacksPicker:browse(current_save_id)
         win = {
             input = {
                 keys = {
-                    ["d"] = "delete_chat",
+                    [self.keymaps.delete.n] = "delete_chat",
+                    [self.keymaps.delete.i] = "delete_chat",
+                    [self.keymaps.rename.n] = "rename_chat",
+                    [self.keymaps.rename.i] = "rename_chat",
                 },
             },
             list = {
                 keys = {
-                    ["d"] = "delete_chat",
+                    [self.keymaps.delete.n] = "delete_chat",
+                    [self.keymaps.delete.i] = "delete_chat",
+                    [self.keymaps.rename.n] = "rename_chat",
+                    [self.keymaps.rename.i] = "rename_chat",
                 },
             },
         },

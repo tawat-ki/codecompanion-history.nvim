@@ -7,6 +7,7 @@ local utils = require("codecompanion._extensions.history.utils")
 ---@field title_generator TitleGenerator
 ---@field default_buf_title string
 ---@field picker Pickers
+---@field picker_keymaps table
 local UI = {}
 
 ---@param opts HistoryOpts
@@ -22,6 +23,7 @@ function UI.new(opts, storage, title_generator)
     self.title_generator = title_generator
     self.default_buf_title = opts.default_buf_title
     self.picker = opts.picker
+    self.picker_keymaps = opts.picker_keymaps
 
     log:trace("Initialized UI with picker: %s", opts.picker)
     return self --[[@as UI]]
@@ -111,6 +113,10 @@ function UI:_set_buf_title(bufnr, title, attempt)
         local success, err = pcall(function()
             local _title = final_title .. (attempt > 0 and " (" .. tostring(attempt) .. ")" or "")
             vim.api.nvim_buf_set_name(bufnr, icon .. _title)
+            utils.fire("TitleSet", {
+                bufnr = bufnr,
+                title = _title,
+            })
         end)
 
         if not success then
@@ -202,6 +208,26 @@ function UI:open_saved_chats()
                 self.storage:delete_chat(chat_data.save_id)
             end,
             ---@param chat_data ChatData
+            ---@param new_title string
+            on_rename = function(chat_data, new_title)
+                log:trace("Renaming chat: %s -> %s", chat_data.save_id, new_title)
+                self.storage:rename_chat(chat_data.save_id, new_title)
+                local found_bufnr = nil
+                for _, bufnr in ipairs(_G.codecompanion_buffers) do
+                    local chat = codecompanion.buf_get_chat(bufnr)
+                    if chat and chat.opts.save_id == chat_data.save_id then
+                        found_bufnr = bufnr
+                        chat.opts.title = new_title
+                        self:_set_buf_title(bufnr, new_title)
+                        break
+                    end
+                end
+                utils.fire("TitleRenamed", {
+                    bufnr = found_bufnr,
+                    title = new_title,
+                })
+            end,
+            ---@param chat_data ChatData
             on_select = function(chat_data)
                 log:trace("Selected chat: %s", chat_data.save_id)
                 local chat_module = require("codecompanion.strategies.chat")
@@ -232,7 +258,7 @@ function UI:open_saved_chats()
                     vim.notify("Failed to load chat", vim.log.levels.ERROR)
                 end
             end,
-        })
+        }, self.picker_keymaps)
         :browse(last_chat and last_chat.opts.save_id)
 end
 
@@ -368,8 +394,18 @@ function UI:_get_preview_lines(chat_data)
 
     if chat_data.settings then
         lines = { "---" }
-        for key, value in pairs(chat_data.settings) do
-            table.insert(lines, string.format("%s: %s", key, vim.inspect(value)))
+        table.insert(lines, string.format("adapter: %s", vim.inspect(chat_data.adapter)))
+        table.insert(lines, string.format("model: %s", vim.inspect(chat_data.settings.model)))
+        -- Sort keys alphabetically
+        local sorted_keys = {}
+        for key in pairs(chat_data.settings) do
+            table.insert(sorted_keys, key)
+        end
+        table.sort(sorted_keys)
+        for _, key in ipairs(sorted_keys) do
+            if key ~= "model" then
+                table.insert(lines, string.format("%s: %s", key, vim.inspect(chat_data.settings[key])))
+            end
         end
         table.insert(lines, "---")
         spacer()

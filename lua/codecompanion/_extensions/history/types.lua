@@ -9,11 +9,13 @@
 ---@field auto_generate_title? boolean Generate title for the chat
 ---@field continue_last_chat? boolean On exiting and entering neovim, loads the last chat on opening chat
 ---@field delete_on_clearing_chat? boolean When chat is cleared with `gx` delete the chat from history
----@field keymap? string Keymap to open saved chats from the chat buffer
+---@field keymap? string | table Keymap to open saved chats from the chat buffer
 ---@field picker? Pickers Picker to use (telescope, etc.)
 ---@field enable_logging? boolean Enable logging for history extension
 ---@field auto_save? boolean Automatically save the chat whenever it is updated
----@field save_chat_keymap? string Keymap to save the current chat
+---@field save_chat_keymap? string | table Keymap to save the current chat
+---@field expiration_days? number Number of days after which chats are automatically deleted (0 to disable)
+---@field picker_keymaps? {rename?: table, delete?: table}
 
 ---@class Chat
 ---@field opts {title:string, save_id: string}
@@ -53,12 +55,17 @@
 ---@field title string
 ---@field updated_at number
 ---@field save_id string
+---@field model string
+---@field adapter string
+---@field message_count number
+---@field token_estimate number
 
 ---@class UIHandlers
 ---@field on_preview fun(chat_data: ChatData): string[]
 ---@field on_delete fun(chat_data: ChatData):nil
 ---@field on_select fun(chat_data: ChatData):nil
 ---@field on_open fun():nil
+---@field on_rename fun(chat_data: ChatData, new_title:string): nil
 
 ---@class BufferInfo
 ---@field bufnr number

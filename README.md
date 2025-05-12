@@ -22,6 +22,7 @@ A history management extension for [codecompanion.nvim](https://codecompanion.ol
 - 🔄 Continue from where you left
 - 📚 Browse saved chats with preview
 - 🔍 Multiple picker interfaces
+- ⌛ Optional automatic chat expiration
 - ⚡ Restore chat sessions with full context and tools state
 
 The following CodeCompanion features are preserved when saving and restoring chats:
@@ -99,6 +100,8 @@ require("codecompanion").setup({
                 auto_save = true,
                 -- Keymap to save the current chat manually
                 save_chat_keymap = "sc",
+                -- Number of days after which chats are automatically deleted (0 to disable)
+                expiration_days = 0,
             }
         }
     }
@@ -125,7 +128,14 @@ The history browser shows all your saved chats with:
 
 Actions in history browser:
 - `<CR>` - Open selected chat
-- `d` - Delete selected chat in normal mode (Doesn't apply to default vim.ui.select)
+- Normal mode:
+  - `d` - Delete selected chat(s)
+  - `r` - Rename selected chat
+- Insert mode:
+  - `<M-d>` (Alt+d) - Delete selected chat(s)
+  - `<M-r>` (Alt+r) - Rename selected chat
+
+> Note: Delete and rename actions are only available in telescope and snacks pickers. Multiple chats can be selected for deletion using picker's multi-select feature (press `<Tab>`).
 
 #### 🔧 API
 
@@ -296,6 +306,10 @@ Special thanks to [Oli Morris](https://github.com/olimorris) for creating the am
 ## 📄 License
 
 MIT
+
+
+
+
 
 
 
