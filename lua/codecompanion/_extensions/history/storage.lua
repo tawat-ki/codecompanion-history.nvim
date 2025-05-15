@@ -226,7 +226,7 @@ function Storage:_update_index_entry(chat_data)
     }
 
     -- Write updated index
-    return FileUtils.write_json(self.index_path, index)
+    return FileUtils.write_json(self.index_path, utils.remove_functions(index))
 end
 
 ---Load all chats from storage (index only)
