@@ -57,6 +57,7 @@ When restoring a chat:
 - [codecompanion.nvim](https://codecompanion.olimorris.dev/)
 - [snacks.nvim](https://github.com/folke/snacks.nvim) (optional, for enhanced picker)
 - [telescope.nvim](https://github.com/nvim-telescope/telescope.nvim) (optional, for enhanced picker)
+- [fzf-lua](https://github.com/ibhagwan/fzf-lua) (optional, for enhanced picker)
 
 ## 📦 Installation
 
@@ -90,7 +91,7 @@ require("codecompanion").setup({
                 auto_save = true,
                 -- Number of days after which chats are automatically deleted (0 to disable)
                 expiration_days = 0,
-                -- Picker interface ("telescope" or "snacks" or "default")
+                -- Picker interface ("telescope" or "snacks" or "fzf-lua" or "default")
                 picker = "telescope",
                 -- Automatically generate titles for new chats
                 auto_generate_title = true,
@@ -292,7 +293,7 @@ The extension integrates with CodeCompanion through a robust event-driven archit
 
 ## 📝 TODOs
 
-- [ ] Add support for additional pickers like snacks, fzf etc
+- [x] Add support for additional pickers like snacks, fzf etc
 
 ## 🔌 Related Extensions
 
@@ -306,17 +307,4 @@ Special thanks to [Oli Morris](https://github.com/olimorris) for creating the am
 ## 📄 License
 
 MIT
-
-
-
-
-
-
-
-
-
-
-
-
-
 
