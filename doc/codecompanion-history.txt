@@ -1,4 +1,4 @@
-*codecompanion-history.txt*      For NVIM v0.8.0      Last change: 2025 May 15
+*codecompanion-history.txt*      For NVIM v0.8.0      Last change: 2025 May 19
 
 ==============================================================================
 Table of Contents                    *codecompanion-history-table-of-contents*
@@ -137,8 +137,14 @@ ADD HISTORY EXTENSION TO CODECOMPANION CONFIG ~
                     expiration_days = 0,
                     -- Picker interface ("telescope" or "snacks" or "fzf-lua" or "default")
                     picker = "telescope",
-                    -- Automatically generate titles for new chats
+                    ---Automatically generate titles for new chats
                     auto_generate_title = true,
+                    title_generation_opts = {
+                        ---Adapter for generating titles (defaults to current chat adapter) 
+                        adapter = nil, -- "copilot"
+                        ---Model for generating titles (defaults to current chat model)
+                        model = nil, -- "gpt-4o"
+                    },
                     ---On exiting and entering neovim, loads the last chat on opening chat
                     continue_last_chat = false,
                     ---When chat is cleared with `gx` delete the chat from history
@@ -339,7 +345,7 @@ architecture:
 
 📝 TODOS  *codecompanion-history-codecompanion-history-extension-📝-todos*
 
-- ☐ Add support for additional pickers like snacks, fzf etc
+- ☒ Add support for additional pickers like snacks, fzf etc
 
 
 🔌 RELATED EXTENSIONS*codecompanion-history-codecompanion-history-extension-🔌-related-extensions*
