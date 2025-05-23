@@ -279,9 +279,12 @@ function UI:create_chat(chat_data)
     local title = chat_data.title
 
     messages = messages or {}
+    local last_msg = messages[#messages]
 
     --HACK: Ensure last message is from user to show header
-    if #messages > 0 and messages[#messages].role ~= "user" then
+    if
+        last_msg and (last_msg.role ~= "user" or (last_msg.role == "user" and (last_msg.opts or {}).visible == false))
+    then
         log:trace("Adding empty user message to ensure header visibility")
         table.insert(messages, {
             role = "user",
