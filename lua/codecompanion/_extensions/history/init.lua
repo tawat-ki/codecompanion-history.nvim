@@ -8,6 +8,7 @@
 
 local History = {}
 local log = require("codecompanion._extensions.history.log")
+local pickers = require("codecompanion._extensions.history.pickers")
 
 ---@type HistoryOpts
 local default_opts = {
@@ -22,9 +23,9 @@ local default_opts = {
     auto_save = true,
     ---Number of days after which chats are automatically deleted (0 to disable)
     expiration_days = 0,
-    ---Picker interface ("telescope" or "snacks" or "fzf-lua" or "default")
+    ---Valid Picker interface ("telescope", "snacks", "fzf-lua", or "default")
     ---@type Pickers
-    picker = "telescope",
+    picker = pickers.history,
     picker_keymaps = {
         rename = {
             n = "r",

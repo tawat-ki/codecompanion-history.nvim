@@ -92,8 +92,8 @@ require("codecompanion").setup({
                 auto_save = true,
                 -- Number of days after which chats are automatically deleted (0 to disable)
                 expiration_days = 0,
-                -- Picker interface ("telescope" or "snacks" or "fzf-lua" or "default")
-                picker = "telescope",
+                -- Picker interface (auto resolved to a valid picker)
+                picker = "telescope", --- ("telescope", "snacks", "fzf-lua", or "default") 
                 ---Automatically generate titles for new chats
                 auto_generate_title = true,
                 title_generation_opts = {
@@ -314,4 +314,7 @@ Special thanks to [Oli Morris](https://github.com/olimorris) for creating the am
 ## 📄 License
 
 MIT
+
+
+
 

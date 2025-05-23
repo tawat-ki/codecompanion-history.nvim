@@ -4,6 +4,8 @@
 ---@field setup fun(opts: table): any Function called when extension is loaded
 ---@field exports? table Optional table of functions exposed via codecompanion.extensions.name
 
+---@alias Pickers "telescope" | "snacks" | "fzf-lua" |  "default"
+
 ---@class GenOpts
 ---@field adapter? string? The adapter to use for generation
 ---@field model? string? The model of the adapter to use for generation

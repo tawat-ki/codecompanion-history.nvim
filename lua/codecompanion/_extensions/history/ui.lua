@@ -170,23 +170,18 @@ function UI:open_saved_chats()
     local items = format_chat_items(index)
     log:trace("Loaded %d saved chats", #items)
 
-    -- Get picker
-    local is_picker_available, resolved_picker =
+    -- Load the configured picker module
+    log:trace("Using picker: %s", self.picker)
+
+    local resolved_picker
+    local is_picker_available, picker_module =
         pcall(require, "codecompanion._extensions.history.pickers." .. self.picker)
     if not is_picker_available then
-        log:trace("Requested picker '%s' not available, falling back to default", self.picker)
+        log:warn("Failed to load picker module '%s', falling back to default", self.picker)
         resolved_picker = require("codecompanion._extensions.history.pickers.default")
-    elseif self.picker ~= "default" then
-        local available, _ = pcall(require, self.picker)
-        if not available then
-            vim.notify(
-                string.format("'%s' module not available. Using default picker", self.picker),
-                vim.log.levels.WARN
-            )
-            resolved_picker = require("codecompanion._extensions.history.pickers.default")
-        end
-    end
-    ---@diagnostic disable-next-line: different-requires
+    else
+        resolved_picker = picker_module
+    end ---@diagnostic disable-next-line: different-requires
     local codecompanion = require("codecompanion")
     local last_chat = codecompanion.last_chat()
 
