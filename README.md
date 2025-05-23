@@ -31,6 +31,7 @@ The following CodeCompanion features are preserved when saving and restoring cha
 |---------|--------|-------|
 |  System Prompts | ✅  | System prompt used in the chat |
 |  Messages History | ✅  | All messages |
+|  Images | ✅  | Restores images as base64 strings |
 |  LLM Adapter | ✅  | The specific adapter used for the chat |
 |  LLM Settings | ✅  | Model, temperature and other adapter settings |
 |  Tools | ✅  | Tool schemas and their system prompts |
