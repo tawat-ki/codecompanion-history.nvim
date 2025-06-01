@@ -17,8 +17,12 @@ local default_opts = {
 
     ---Keymap to open history from chat buffer (default: gh)
     keymap = "gh",
+    ---Description for the history keymap (for which-key integration)
+    keymap_description = "Browse saved chats",
     ---Keymap to save the current chat manually (when auto_save is disabled)
     save_chat_keymap = "sc",
+    ---Description for the save chat keymap (for which-key integration)
+    save_chat_keymap_description = "Save current chat",
     ---Save all chats by default (disable to save only manually using 'sc')
     auto_save = true,
     ---Number of days after which chats are automatically deleted (0 to disable)
@@ -243,24 +247,35 @@ function History:_setup_keymaps()
         end
         return v
     end
-    require("codecompanion.config").strategies.chat.keymaps["Saved Chats"] = {
-        modes = form_modes(self.opts.keymap),
-        description = "Browse Saved Chats",
-        callback = function(_)
-            self.ui:open_saved_chats()
-        end,
+
+    local keymaps = {
+        ["Saved Chats"] = {
+            keymap = self.opts.keymap,
+            description = self.opts.keymap_description,
+            callback = function(_)
+                self.ui:open_saved_chats()
+            end,
+        },
+        ["Save Current Chat"] = {
+            keymap = self.opts.save_chat_keymap,
+            description = self.opts.save_chat_keymap_description,
+            callback = function(chat)
+                if not chat then
+                    return
+                end
+                self.storage:save_chat(chat)
+                log:debug("Saved current chat")
+            end,
+        },
     }
-    require("codecompanion.config").strategies.chat.keymaps["Save Current Chat"] = {
-        modes = form_modes(self.opts.save_chat_keymap),
-        description = "Save current chat",
-        callback = function(chat)
-            if not chat then
-                return
-            end
-            self.storage:save_chat(chat)
-            log:debug("Saved current chat")
-        end,
-    }
+
+    for name, keymap_config in pairs(keymaps) do
+        require("codecompanion.config").strategies.chat.keymaps[name] = {
+            modes = form_modes(keymap_config.keymap),
+            description = keymap_config.description,
+            callback = keymap_config.callback,
+        }
+    end
 end
 
 -- ---@param chat Chat
