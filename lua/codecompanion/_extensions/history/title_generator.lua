@@ -230,7 +230,7 @@ function TitleGenerator:_make_adapter_request(chat, prompt, callback)
     if opts.model then
         settings = schema.get_default(adapter, { model = opts.model })
     end
-    settings = adapter:map_schema_to_params(settings)
+    settings = vim.deepcopy(adapter:map_schema_to_params(settings))
     settings.opts.stream = false
     local payload = {
         messages = adapter:map_roles({
