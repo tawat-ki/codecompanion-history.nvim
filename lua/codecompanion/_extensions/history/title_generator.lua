@@ -222,8 +222,8 @@ end
 function TitleGenerator:_make_adapter_request(chat, prompt, callback)
     log:trace("Making adapter request for title generation")
     local opts = self.opts.title_generation_opts or {}
-    local adapter = chat.adapter
-    local settings = chat.settings
+    local adapter = vim.deepcopy(chat.adapter)
+    local settings = vim.deepcopy(chat.settings)
     if opts.adapter then
         adapter = require("codecompanion.adapters").resolve(opts.adapter)
     end
