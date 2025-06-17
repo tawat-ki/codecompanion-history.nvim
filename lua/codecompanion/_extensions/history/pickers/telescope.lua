@@ -59,22 +59,15 @@ function TelescopePicker:browse(current_save_id)
 
                     actions.close(prompt_bufnr)
 
-                    -- Confirm deletion if multiple items selected
-                    if #selections > 1 then
-                        local confirm = vim.fn.confirm(
-                            "Are you sure you want to delete " .. #selections .. " items? (y/n)",
-                            "&Yes\n&No"
-                        )
-                        if confirm ~= 1 then
-                            return
-                        end
-                    end
-                    -- Delete all selected items
+                    -- Extract chat data from selections
+                    local chats_to_delete = {}
                     for _, selection in ipairs(selections) do
-                        self.handlers.on_delete(selection.value)
+                        table.insert(chats_to_delete, selection.value)
                     end
-                    self.handlers.on_open()
+
+                    self.handlers.on_delete(chats_to_delete)
                 end
+
                 -- Function to handle renaming
                 local rename_selection = function()
                     local selection = action_state.get_selected_entry()
@@ -82,17 +75,7 @@ function TelescopePicker:browse(current_save_id)
                         return
                     end
                     actions.close(prompt_bufnr)
-
-                    -- Prompt for new title
-                    vim.ui.input({
-                        prompt = "New title: ",
-                        default = selection.value.title or "",
-                    }, function(new_title)
-                        if new_title and vim.trim(new_title) ~= "" then
-                            self.handlers.on_rename(selection.value, new_title)
-                            self.handlers.on_open()
-                        end
-                    end)
+                    self.handlers.on_rename(selection.value)
                 end
 
                 -- Function to handle duplication

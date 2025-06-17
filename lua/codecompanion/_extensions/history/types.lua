@@ -78,10 +78,10 @@
 
 ---@class UIHandlers
 ---@field on_preview fun(chat_data: ChatData): string[]
----@field on_delete fun(chat_data: ChatData):nil
----@field on_select fun(chat_data: ChatData):nil
----@field on_open fun():nil
----@field on_rename fun(chat_data: ChatData, new_title:string): nil
+---@field on_delete fun(chat_data: ChatData|ChatData[]): nil
+---@field on_select fun(chat_data: ChatData): nil
+---@field on_open fun(): nil
+---@field on_rename fun(chat_data: ChatData): nil
 ---@field on_duplicate fun(chat_data: ChatData): nil
 
 ---@class BufferInfo

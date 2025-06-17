@@ -204,30 +204,90 @@ function UI:open_saved_chats(filter_fn)
                     return { "Chat data not available" }
                 end
             end,
-            ---@param chat_data ChatData
+            ---@param chat_data ChatData|ChatData[]
             on_delete = function(chat_data)
-                log:trace("Deleting chat: %s", chat_data.save_id)
-                self.storage:delete_chat(chat_data.save_id)
-            end,
-            ---@param chat_data ChatData
-            ---@param new_title string
-            on_rename = function(chat_data, new_title)
-                log:trace("Renaming chat: %s -> %s", chat_data.save_id, new_title)
-                self.storage:rename_chat(chat_data.save_id, new_title)
-                local found_bufnr = nil
-                for _, bufnr in ipairs(_G.codecompanion_buffers or {}) do
-                    local chat = codecompanion.buf_get_chat(bufnr)
-                    if chat and chat.opts.save_id == chat_data.save_id then
-                        found_bufnr = bufnr
-                        chat.opts.title = new_title
-                        self:_set_buf_title(bufnr, new_title)
-                        break
+                -- Handle both single chat and array of chats
+                local chats_to_delete = {}
+                if type(chat_data) == "table" and chat_data.save_id then
+                    -- Single chat
+                    chats_to_delete = { chat_data }
+                elseif type(chat_data) == "table" and #chat_data > 0 then
+                    -- Array of chats
+                    chats_to_delete = chat_data
+                else
+                    vim.notify("Invalid chat data for deletion", vim.log.levels.ERROR)
+                    return
+                end
+
+                log:trace("Deleting %d chat(s)", #chats_to_delete)
+
+                -- Always ask for confirmation
+                local chat_count = #chats_to_delete
+                local confirmation_message
+                if chat_count == 1 then
+                    confirmation_message = string.format('Delete chat "%s"?', chats_to_delete[1].title or "Untitled")
+                else
+                    confirmation_message = string.format("Delete %d chats?", chat_count)
+                end
+
+                local choice = vim.fn.confirm(confirmation_message, "&Yes\n&No", 2)
+                if choice ~= 1 then
+                    return -- User cancelled
+                end
+
+                -- Delete all selected chats
+                local deleted_count = 0
+                for _, chat in ipairs(chats_to_delete) do
+                    if self.storage:delete_chat(chat.save_id) then
+                        deleted_count = deleted_count + 1
                     end
                 end
-                utils.fire("TitleRenamed", {
-                    bufnr = found_bufnr,
-                    title = new_title,
-                })
+
+                if deleted_count > 0 then
+                    local message = deleted_count == 1 and "Chat deleted successfully"
+                        or string.format("%d chats deleted successfully", deleted_count)
+                    vim.notify(message, vim.log.levels.INFO)
+                    self:open_saved_chats(filter_fn)
+                else
+                    vim.notify("Failed to delete chats", vim.log.levels.ERROR)
+                end
+            end,
+            ---@param chat_data ChatData
+            on_rename = function(chat_data)
+                log:trace("Renaming chat: %s", chat_data.save_id)
+
+                -- Prompt for new title with current title as default
+                vim.ui.input({
+                    prompt = "Rename to: ",
+                    default = chat_data.title or "",
+                }, function(new_title)
+                    if not new_title or vim.trim(new_title) == "" then
+                        return -- User cancelled or entered empty title
+                    end
+
+                    local success = self.storage:rename_chat(chat_data.save_id, new_title)
+                    if success then
+                        -- Update any open chat buffers with this save_id
+                        local found_bufnr = nil
+                        for _, bufnr in ipairs(_G.codecompanion_buffers or {}) do
+                            local chat = codecompanion.buf_get_chat(bufnr)
+                            if chat and chat.opts.save_id == chat_data.save_id then
+                                found_bufnr = bufnr
+                                chat.opts.title = new_title
+                                self:_set_buf_title(bufnr, new_title)
+                                break
+                            end
+                        end
+                        utils.fire("TitleRenamed", {
+                            bufnr = found_bufnr,
+                            title = new_title,
+                        })
+                        vim.notify("Chat renamed successfully", vim.log.levels.INFO)
+                        self:open_saved_chats(filter_fn)
+                    else
+                        vim.notify("Failed to rename chat", vim.log.levels.ERROR)
+                    end
+                end)
             end,
             ---@param chat_data ChatData
             on_duplicate = function(chat_data)
