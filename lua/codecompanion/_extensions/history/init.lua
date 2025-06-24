@@ -288,11 +288,13 @@ function History:_setup_keymaps()
     }
 
     for name, keymap_config in pairs(keymaps) do
-        require("codecompanion.config").strategies.chat.keymaps[name] = {
-            modes = form_modes(keymap_config.keymap),
-            description = keymap_config.description,
-            callback = keymap_config.callback,
-        }
+        if keymap_config.keymap then
+            require("codecompanion.config").strategies.chat.keymaps[name] = {
+                modes = form_modes(keymap_config.keymap),
+                description = keymap_config.description,
+                callback = keymap_config.callback,
+            }
+        end
     end
 end
 
@@ -312,11 +314,11 @@ end
 
 ---@type CodeCompanion.Extension
 return {
-    ---@param opts HistoryOpts
-    setup = function(opts)
+    ---@param user_opts HistoryOpts
+    setup = function(user_opts)
         if not history_instance then
             -- Initialize logging first
-            opts = vim.tbl_deep_extend("force", default_opts, opts or {})
+            opts = vim.tbl_deep_extend("force", default_opts, user_opts or {})
             log.setup_logging(opts.enable_logging)
             history_instance = History.new(opts)
             log:debug("History extension setup successfully")

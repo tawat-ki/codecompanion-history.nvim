@@ -1,4 +1,4 @@
-*codecompanion-history.txt*      For NVIM v0.8.0     Last change: 2025 June 17
+*codecompanion-history.txt*      For NVIM v0.8.0     Last change: 2025 June 24
 
 ==============================================================================
 Table of Contents                    *codecompanion-history-table-of-contents*
