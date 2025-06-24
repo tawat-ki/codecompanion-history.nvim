@@ -314,11 +314,11 @@ end
 
 ---@type CodeCompanion.Extension
 return {
-    ---@param user_opts HistoryOpts
-    setup = function(user_opts)
+    ---@param opts HistoryOpts
+    setup = function(opts)
         if not history_instance then
             -- Initialize logging first
-            opts = vim.tbl_deep_extend("force", default_opts, user_opts or {})
+            opts = vim.tbl_deep_extend("force", default_opts, opts or {})
             log.setup_logging(opts.enable_logging)
             history_instance = History.new(opts)
             log:debug("History extension setup successfully")
