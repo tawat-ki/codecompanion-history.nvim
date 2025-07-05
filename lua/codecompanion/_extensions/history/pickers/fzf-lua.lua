@@ -1,8 +1,6 @@
-local DefaultPicker = require("codecompanion._extensions.history.pickers.default")
-
----@class FzfluaPicker : DefaultPicker
+---@class CodeCompanion.History.FzfluaPicker : CodeCompanion.History.DefaultPicker
 local FzfluaPicker = setmetatable({}, {
-    __index = DefaultPicker,
+    __index = require("codecompanion._extensions.history.pickers.default"),
 })
 
 -- Convert neovim bind to fzf bind
@@ -21,44 +19,51 @@ local conv = function(key)
 end
 
 FzfluaPicker.__index = FzfluaPicker
----@param current_save_id? string
-function FzfluaPicker:browse(current_save_id)
+
+function FzfluaPicker:browse()
     local cache = {}
     local nbsp = require("fzf-lua.utils").nbsp
+
     local format = function(item)
-        cache[item.save_id] = item
-        return item.save_id .. nbsp .. self:format_entry(item, (current_save_id and current_save_id) == item.save_id)
+        local item_id = self:get_item_id(item)
+        cache[item_id] = item
+        return item_id .. nbsp .. self:format_entry(item)
     end
+
     local decode = function(entry_str)
         return cache[entry_str:match("^(.*)" .. nbsp)]
     end
+
     require("fzf-lua").fzf_exec(function(fzf_cb)
-        vim.iter(self.chats):map(format):each(fzf_cb)
+        vim.iter(self.config.items):map(format):each(fzf_cb)
         fzf_cb(nil)
     end, {
         fzf_opts = { ["--with-nth"] = "2..", ["--delimiter"] = string.format("[%s]", nbsp) },
-        winopts = { title = "Saved Chats" },
+        winopts = { title = self.config.title },
         actions = {
             enter = function(selections)
                 if #selections == 0 then
                     return
                 end
-                vim.iter(selections):map(decode):each(self.handlers.on_select)
+                vim.iter(selections):map(decode):each(self.config.handlers.on_select)
             end,
-            -- Rename chat
-            [conv(self.keymaps.rename.i)] = function(selections)
+            -- Rename item
+            [conv(self.config.keymaps.rename.i)] = function(selections)
                 if #selections == 0 then
                     return
                 end
                 if #selections > 1 then
-                    return vim.notify("Can rename only one chat at a time", vim.log.levels.WARN)
+                    return vim.notify(
+                        "Can rename only one " .. self:get_item_name_singular() .. " at a time",
+                        vim.log.levels.WARN
+                    )
                 end
 
                 local selection = decode(selections[1])
-                self.handlers.on_rename(selection)
+                self.config.handlers.on_rename(selection)
             end,
-            -- Delete chat
-            [conv(self.keymaps.delete.i)] = function(selections)
+            -- Delete item
+            [conv(self.config.keymaps.delete.i)] = function(selections)
                 if #selections == 0 then
                     return
                 end
@@ -69,10 +74,10 @@ function FzfluaPicker:browse(current_save_id)
                     table.insert(chats_to_delete, decode(selection))
                 end
 
-                self.handlers.on_delete(chats_to_delete)
+                self.config.handlers.on_delete(chats_to_delete)
             end,
             -- Duplicate chat
-            [conv(self.keymaps.duplicate.i)] = function(selections)
+            [conv(self.config.keymaps.duplicate.i)] = function(selections)
                 if #selections == 0 then
                     return
                 end
@@ -81,7 +86,7 @@ function FzfluaPicker:browse(current_save_id)
                 end
 
                 local selection = decode(selections[1])
-                self.handlers.on_duplicate(selection)
+                self.config.handlers.on_duplicate(selection)
             end,
         },
         previewer = {
@@ -89,7 +94,7 @@ function FzfluaPicker:browse(current_save_id)
                 local previewer = require("fzf-lua.previewer.builtin").base:extend()
                 previewer.populate_preview_buf = function(_, entry_str)
                     local item = decode(entry_str)
-                    local lines = self.handlers.on_preview(item)
+                    local lines = self.config.handlers.on_preview(item)
                     if not lines then
                         return
                     end

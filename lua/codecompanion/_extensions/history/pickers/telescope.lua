@@ -1,39 +1,33 @@
-local DefaultPicker = require("codecompanion._extensions.history.pickers.default")
-local utils = require("codecompanion._extensions.history.utils")
-
----@class TelescopePicker : DefaultPicker
+---@class CodeCompanion.History.TelescopePicker : CodeCompanion.History.DefaultPicker
 local TelescopePicker = setmetatable({}, {
-    __index = DefaultPicker,
+    __index = require("codecompanion._extensions.history.pickers.default"),
 })
 TelescopePicker.__index = TelescopePicker
 
----@param current_save_id? string
-function TelescopePicker:browse(current_save_id)
+function TelescopePicker:browse()
     require("telescope.pickers")
         .new({}, {
-            prompt_title = "Saved Chats",
+            prompt_title = self.config.title,
             finder = require("telescope.finders").new_table({
-                results = self.chats,
+                results = self.config.items,
                 entry_maker = function(entry)
-                    local display_title =
-                        self:format_entry(entry, (current_save_id and current_save_id) == entry.save_id)
+                    local display_title = self:format_entry(entry)
 
+                    -- Create telescope entry with generic fields
                     return vim.tbl_extend("keep", {
                         value = entry,
                         display = display_title,
-                        ordinal = entry.title or "",
-                        name = entry.title,
-                        save_id = entry.save_id,
-                        title = entry.title,
-                        messages = entry.messages,
+                        ordinal = self:get_item_title(entry),
+                        name = self:get_item_title(entry),
+                        item_id = self:get_item_id(entry),
                     }, entry)
                 end,
             }),
             sorter = require("telescope.config").values.generic_sorter({}),
             previewer = require("telescope.previewers").new_buffer_previewer({
-                title = "Chat Preview",
+                title = self:get_item_name_singular():gsub("^%l", string.upper) .. " Preview",
                 define_preview = function(preview_state, entry)
-                    local lines = self.handlers.on_preview(entry)
+                    local lines = self.config.handlers.on_preview(entry)
                     if not lines then
                         return
                     end
@@ -65,7 +59,7 @@ function TelescopePicker:browse(current_save_id)
                         table.insert(chats_to_delete, selection.value)
                     end
 
-                    self.handlers.on_delete(chats_to_delete)
+                    self.config.handlers.on_delete(chats_to_delete)
                 end
 
                 -- Function to handle renaming
@@ -75,9 +69,8 @@ function TelescopePicker:browse(current_save_id)
                         return
                     end
                     actions.close(prompt_bufnr)
-                    self.handlers.on_rename(selection.value)
+                    self.config.handlers.on_rename(selection.value)
                 end
-
                 -- Function to handle duplication
                 local duplicate_selection = function()
                     local selection = action_state.get_selected_entry()
@@ -85,49 +78,50 @@ function TelescopePicker:browse(current_save_id)
                         return
                     end
                     actions.close(prompt_bufnr)
-                    self.handlers.on_duplicate(selection.value)
+                    self.config.handlers.on_duplicate(selection.value)
                 end
 
-                -- Multi-select toggle with <Tab>
+                -- Select action
                 actions.select_default:replace(function()
                     local selection = action_state.get_selected_entry()
-                    if selection then
-                        actions.close(prompt_bufnr)
-                        self.handlers.on_select(selection.value)
+                    if not selection then
+                        return
                     end
+                    actions.close(prompt_bufnr)
+                    self.config.handlers.on_select(selection.value)
                 end)
-                -- Delete chats
-                -- Delete chats (normal mode and <M-d> in insert mode)
-                vim.keymap.set({ "n" }, self.keymaps.delete.n, delete_selections, {
+
+                -- Delete items (normal mode and insert mode)
+                vim.keymap.set({ "n" }, self.config.keymaps.delete.n, delete_selections, {
                     buffer = prompt_bufnr,
                     silent = true,
                     nowait = true,
                 })
-                vim.keymap.set({ "i" }, self.keymaps.delete.i, delete_selections, {
+                vim.keymap.set({ "i" }, self.config.keymaps.delete.i, delete_selections, {
                     buffer = prompt_bufnr,
                     silent = true,
                     nowait = true,
                 })
 
-                -- Rename chat (normal mode and <C-r> in insert mode)
-                vim.keymap.set({ "n" }, self.keymaps.rename.n, rename_selection, {
+                -- Rename items (normal mode and insert mode)
+                vim.keymap.set({ "n" }, self.config.keymaps.rename.n, rename_selection, {
                     buffer = prompt_bufnr,
                     silent = true,
                     nowait = true,
                 })
-                vim.keymap.set({ "i" }, self.keymaps.rename.i, rename_selection, {
+                vim.keymap.set({ "i" }, self.config.keymaps.rename.i, rename_selection, {
                     buffer = prompt_bufnr,
                     silent = true,
                     nowait = true,
                 })
 
                 -- Duplicate chat (normal mode and <C-y> in insert mode)
-                vim.keymap.set({ "n" }, self.keymaps.duplicate.n, duplicate_selection, {
+                vim.keymap.set({ "n" }, self.config.keymaps.duplicate.n, duplicate_selection, {
                     buffer = prompt_bufnr,
                     silent = true,
                     nowait = true,
                 })
-                vim.keymap.set({ "i" }, self.keymaps.duplicate.i, duplicate_selection, {
+                vim.keymap.set({ "i" }, self.config.keymaps.duplicate.i, duplicate_selection, {
                     buffer = prompt_bufnr,
                     silent = true,
                     nowait = true,
