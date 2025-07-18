@@ -31,11 +31,11 @@ function SnacksPicker:browse()
         confirm = function(picker, _)
             local items = picker:selected({ fallback = true })
             if items then
+                picker:close()
                 vim.iter(items):each(function(item)
                     self.config.handlers.on_select(item)
                 end)
             end
-            picker:close()
         end,
         actions = {
             rename_item = function(picker)
