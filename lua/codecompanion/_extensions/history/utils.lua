@@ -103,12 +103,23 @@ function M.remove_functions(obj)
     if type(obj) ~= "table" then
         return obj
     end
+
+    -- Check if this is an empty dict and preserve its metatable
+    local mt = getmetatable(obj)
+    local is_empty_dict = mt == vim._empty_dict_mt
+
     local new_obj = {}
     for k, v in pairs(obj) do
         if type(v) ~= "function" then
             new_obj[k] = M.remove_functions(v)
         end
     end
+
+    -- If original was an empty dict and new obj is empty, preserve the metatable
+    if is_empty_dict and vim.tbl_isempty(new_obj) then
+        return vim.empty_dict()
+    end
+
     return new_obj
 end
 
@@ -132,7 +143,7 @@ function M.read_json(file_path)
     end
 
     -- Parse JSON content
-    local success, data = pcall(vim.json.decode, file_result.data)
+    local success, data = pcall(vim.json.decode, file_result.data, { luanil = { object = true, array = true } })
     if not success then
         return { ok = false, data = nil, error = "Failed to parse JSON: " .. tostring(data) }
     end

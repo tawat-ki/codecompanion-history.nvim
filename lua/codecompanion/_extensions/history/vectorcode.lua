@@ -62,7 +62,7 @@ M.vectorise = check_vectorcode_wrap(function(path)
                 vim.notify("Indexing finished!", vim.log.levels.INFO, { title = "CodeCompanion-History" })
             end)
         end
-        local ok, _ = pcall(vim.json.decode, out.stdout)
+        local ok, _ = pcall(vim.json.decode, out.stdout, { luanil = { object = true, array = true } })
         if not ok and out.stderr then
             log:error(out.stderr)
         end
@@ -131,7 +131,7 @@ M.make_memory_tool = check_vectorcode_wrap(function(opts)
                 vim.list_extend(args, action.keywords or {})
                 cb = vim.schedule_wrap(cb)
                 vim.system(args, {}, function(out)
-                    local ok, result = pcall(vim.json.decode, out.stdout)
+                    local ok, result = pcall(vim.json.decode, out.stdout, { luanil = { object = true, array = true } })
                     if ok then
                         cb({ status = "success", data = result })
                     else
