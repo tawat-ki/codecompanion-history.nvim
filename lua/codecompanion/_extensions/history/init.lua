@@ -199,7 +199,7 @@ function History:_setup_autocommands()
             if not self.opts.auto_save then
                 return
             end
-            if opts.match == "CodeCompanionRequestFinished" or opts.match == "CodeCompanionAgentFinished" then
+            if opts.match == "CodeCompanionRequestFinished" or opts.match == "CodeCompanionToolsFinished" then
                 log:trace("Chat %s event received for %s", opts.match, opts.data.strategy)
                 if opts.match == "CodeCompanionRequestFinished" and opts.data.strategy ~= "chat" then
                     return log:trace("Skipping RequestFinished event received for non-chat strategy")
