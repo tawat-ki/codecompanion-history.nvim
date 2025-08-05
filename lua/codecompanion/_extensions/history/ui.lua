@@ -596,8 +596,8 @@ function UI:create_chat(chat_data)
         for _, item in ipairs(stored_context_items) do
             chat.context:add(item)
         end
-        chat.tools.schemas = chat_data.schemas or {}
-        chat.tools.in_use = chat_data.in_use or {}
+        chat.tool_registry.schemas = chat_data.schemas or {}
+        chat.tool_registry.in_use = chat_data.in_use or {}
         chat.cycle = chat_data.cycle or 1
         chat.opts.title_refresh_count = chat_data.title_refresh_count or 0
         log:trace("Successfully created chat with save_id: %s", save_id or "N/A")
