@@ -634,21 +634,21 @@ function UI:create_chat(chat_data)
                         end)
                         :totable()
                     local has_model = vim.tbl_contains(available_models, saved_model)
-                    if not has_model then
-                        vim.notify(
-                            string.format(
-                                "Model '%s' is not available in '%s' adapter, using default model.",
-                                saved_model,
-                                adapter
-                            )
-                        )
-                        return _create_chat(adapter, nil)
-                        --INFO: this results in rare errors where the model opts differ from one model to another model.
-                        -- return self:_change_model(available_models, function(model)
-                        --     settings.model = model
-                        --     create_chat(adapter, nil)
-                        -- end)
-                    end
+                    -- if not has_model then
+                    --     vim.notify(
+                    --         string.format(
+                    --             "Model '%s' is not available in '%s' adapter, using default model.",
+                    --             saved_model,
+                    --             adapter
+                    --         )
+                    --     )
+                    --     return _create_chat(adapter, nil)
+                    --     --INFO: this results in rare errors where the model opts differ from one model to another model.
+                    --     -- return self:_change_model(available_models, function(model)
+                    --     --     settings.model = model
+                    --     --     create_chat(adapter, nil)
+                    --     -- end)
+                    -- end
                 end
             end
         end
